@@ -257,7 +257,7 @@ namespace NanoCorona.Network
 
         private static ProviderResponse ParseSuccess(string raw)
         {
-            var root = JsonConvert.DeserializeObject(raw) as Dictionary<string, object>;
+            var root = JsonConvert.DeserializeObject<Dictionary<string, object>>(raw);
             if (root == null)
                 return Failure("INVALID_RESPONSE", "Gemini returned invalid JSON.", 200, raw);
 
@@ -361,7 +361,26 @@ namespace NanoCorona.Network
         private static object[] GetArray(Dictionary<string, object> source, string key)
         {
             object value;
-            return source.TryGetValue(key, out value) && value != null ? (value as JArray)?.ToObject<object[]>() : null;
+            if (source == null || !source.TryGetValue(key, out value) || value == null)
+                return null;
+
+            var array = value as JArray;
+            if (array == null)
+                return null;
+
+            var result = new object[array.Count];
+            for (var i = 0; i < array.Count; i++)
+            {
+                var token = array[i];
+                if (token is JObject)
+                    result[i] = token.ToObject<Dictionary<string, object>>();
+                else if (token is JArray)
+                    result[i] = token.ToObject<object[]>();
+                else
+                    result[i] = token.ToObject<object>();
+            }
+
+            return result;
         }
 
         private static string GetString(Dictionary<string, object> source, string key)
