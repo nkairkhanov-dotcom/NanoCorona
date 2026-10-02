@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 
 namespace NanoCorona.Network
 {
@@ -36,7 +36,7 @@ namespace NanoCorona.Network
                 Uri.EscapeDataString(request.Model));
 
             var body = BuildRequestBody(request);
-            var json = new JavaScriptSerializer().Serialize(body);
+            var json = JsonConvert.SerializeObject(body);
 
             for (var attempt = 0; attempt <= options.MaxRetries; attempt++)
             {
@@ -121,7 +121,7 @@ namespace NanoCorona.Network
                 { "contents", new object[] { new Dictionary<string, object> { { "role", "user" }, { "parts", parts.ToArray() } } } },
                 { "generationConfig", new Dictionary<string, object> { { "responseModalities", new[] { "TEXT" } } } }
             };
-            var json = new JavaScriptSerializer().Serialize(body);
+            var json = JsonConvert.SerializeObject(body);
 
             using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
             using (var message = new HttpRequestMessage(HttpMethod.Post, endpoint))
@@ -232,7 +232,7 @@ namespace NanoCorona.Network
 
         private static ProviderResponse ParseTextSuccess(string raw)
         {
-            var root = new JavaScriptSerializer().DeserializeObject(raw) as Dictionary<string, object>;
+            var root = JsonConvert.DeserializeObject(raw) as Dictionary<string, object>;
             if (root == null) return Failure("INVALID_RESPONSE", "Gemini returned invalid JSON.", 200, raw);
             string text = null;
             var candidates = GetArray(root, "candidates");
@@ -256,7 +256,7 @@ namespace NanoCorona.Network
 
         private static ProviderResponse ParseSuccess(string raw)
         {
-            var root = new JavaScriptSerializer().DeserializeObject(raw) as Dictionary<string, object>;
+            var root = JsonConvert.DeserializeObject(raw) as Dictionary<string, object>;
             if (root == null)
                 return Failure("INVALID_RESPONSE", "Gemini returned invalid JSON.", 200, raw);
 
@@ -326,7 +326,7 @@ namespace NanoCorona.Network
 
             try
             {
-                var root = new JavaScriptSerializer().DeserializeObject(raw) as Dictionary<string, object>;
+                var root = JsonConvert.DeserializeObject(raw) as Dictionary<string, object>;
                 var error = root == null ? null : GetObject(root, "error");
                 if (error != null)
                 {
