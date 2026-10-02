@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace NanoCorona.Network
 {
@@ -201,7 +202,7 @@ namespace NanoCorona.Network
         private static string[] GetStringArray(Dictionary<string, object> root, string key)
         {
             object v;
-            var list = root.TryGetValue(key, out v) ? v as object[] : null;
+            var list = root.TryGetValue(key, out v) && v != null ? (v as JArray)?.ToObject<object[]>() : null;
             if (list == null) return new string[0];
             var result = new List<string>();
             foreach (var item in list) if (item != null) result.Add(Convert.ToString(item));
@@ -309,7 +310,7 @@ namespace NanoCorona.Network
         {
             if (source == null) return null;
             object value;
-            return source.TryGetValue(key, out value) ? value as Dictionary<string, object> : null;
+            return source.TryGetValue(key, out value) && value != null ? (value as JObject)?.ToObject<Dictionary<string, object>>() : null;
         }
 
         private static double GetDouble(Dictionary<string, object> source, string key)
