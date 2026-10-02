@@ -610,7 +610,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         local r = undefined
         if NanoCoronaRenderExtraction == undefined then
         (
-            messageBox "Render extraction module is not loaded." title:"NanoCorona"
+            messageBox ("Render extraction module is not loaded.\n\n" + (if NanoCoronaExtractionLoadError != undefined then NanoCoronaExtractionLoadError else "Check NanoCorona_RenderExtraction.ms in the NanoCorona scripts folder.")) title:"NanoCorona"
             NanoCoronaVfbPrototype.setStatus "Extraction module unavailable"
             return false
         )
