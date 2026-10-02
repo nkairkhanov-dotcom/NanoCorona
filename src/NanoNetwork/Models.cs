@@ -111,3 +111,4 @@ namespace NanoCorona.Network
         public string ErrorMessage { get; set; }
         public long DurationMs { get; set; }
     }
+}
