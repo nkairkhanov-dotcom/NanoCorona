@@ -129,7 +129,7 @@ namespace NanoCorona.Network
                             {
                                 { "image", new Dictionary<string, object>
                                     {
-                                        { "aspectRatio", "16:9" },
+                                        { "aspectRatio", string.IsNullOrWhiteSpace(request.AspectRatio) ? "16:9" : request.AspectRatio },
                                         { "imageSize", NormalizeResolution(request.Resolution) }
                                     }
                                 }
