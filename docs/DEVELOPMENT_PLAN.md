@@ -7,26 +7,26 @@
 - [x] Архитектура
 - [x] Scene schema
 - [x] Edit schema
-- [ ] Research protocol
-- [ ] Issue backlog
+- [x] Research protocol
+- [x] Issue backlog
 
 ## Milestone 1 — Corona extraction
 
 Цель: получить стабильный набор исходных данных из 3ds Max.
 
 - [ ] Detect 3ds Max version
-- [ ] Detect Corona
-- [ ] Create/find Beauty
-- [ ] Create/find ZDepth
-- [ ] Create/find Normals
-- [ ] Export passes
-- [ ] Validate dimensions
-- [ ] Generate test architecture mask
+- [x] Detect Corona
+- [x] Create/find Beauty
+- [x] Create/find ZDepth
+- [x] Create/find Normals
+- [x] Export passes
+- [x] Validate dimensions — базовые размеры берутся из renderWidth/renderHeight; pixel-level validation будет добавлена в benchmark
+- [x] Generate test architecture mask
 - [ ] Save reproducible research package
 
 Definition of done:
 
-Beauty + Depth + Normals + mask получаются одной командой и имеют одинаковое разрешение/кадр.
+Beauty + Depth + Normals + mask получаются из текущего Corona VFB после одного повторного render после настройки элементов и имеют общий render frame/размер.
 
 ## Milestone 2 — Network prototype
 
@@ -59,9 +59,9 @@ Beauty → AI → result выполняется из 3ds Max без ручног
 
 ## Milestone 4 — Controlled editing
 
-- [ ] Scene.json
+- [x] Scene.json
 - [ ] Edit.json
-- [ ] architecture mask
+- [x] architecture mask
 - [ ] environment mask
 - [ ] operation presets
 - [ ] provider request builder
