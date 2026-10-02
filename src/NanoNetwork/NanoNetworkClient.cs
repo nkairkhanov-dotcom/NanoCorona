@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 
 namespace NanoCorona.Network
 {
@@ -172,7 +172,7 @@ namespace NanoCorona.Network
                 var start = json.IndexOf('{');
                 var end = json.LastIndexOf('}');
                 if (start >= 0 && end > start) json = json.Substring(start, end - start + 1);
-                var root = new JavaScriptSerializer().DeserializeObject(json) as Dictionary<string, object>;
+                var root = JsonConvert.DeserializeObject(json) as Dictionary<string, object>;
                 if (root == null) throw new NanoNetworkException("Vision QA returned invalid JSON.", "QA_INVALID");
                 return new VisionQaResult
                 {
@@ -225,7 +225,7 @@ namespace NanoCorona.Network
                 });
             }
 
-            return new JavaScriptSerializer().Serialize(new Dictionary<string, object>
+            return JsonConvert.SerializeObject(new Dictionary<string, object>
             {
                 { "provider", _provider.Name },
                 { "model", providerRequest.Model },
@@ -266,7 +266,7 @@ namespace NanoCorona.Network
         {
             try
             {
-                var root = new JavaScriptSerializer().DeserializeObject(sceneJson) as Dictionary<string, object>;
+                var root = JsonConvert.DeserializeObject(sceneJson) as Dictionary<string, object>;
                 var scene = root == null ? null : GetObject(root, "scene");
                 var render = scene == null ? null : GetObject(scene, "render");
                 var width = GetDouble(render, "width");
@@ -412,7 +412,7 @@ namespace NanoCorona.Network
 
             try
             {
-                var root = new JavaScriptSerializer().DeserializeObject(json) as Dictionary<string, object>;
+                var root = JsonConvert.DeserializeObject(json) as Dictionary<string, object>;
                 if (root == null || !root.ContainsKey("operations"))
                     throw new NanoNetworkException("Edit.json has no operations array.", "EDIT_INVALID");
                 return json;
