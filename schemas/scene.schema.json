@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nanocorona.local/schema/scene.schema.json",
+  "title": "NanoCorona Scene",
+  "type": "object",
+  "required": ["schemaVersion", "scene", "regions", "constraints"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "scene": {
+      "type": "object",
+      "required": ["type", "camera"],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "camera": {
+          "type": "object",
+          "required": ["projection", "compositionLocked"],
+          "properties": {
+            "projection": {
+              "type": "string"
+            },
+            "compositionLocked": {
+              "type": "boolean"
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "aspectRatio": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "regions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "protected"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "protected": { "type": "boolean" },
+          "mask": { "type": "string" },
+          "depthRange": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "appearanceEditable": { "type": "boolean" },
+          "geometryEditable": { "type": "boolean" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

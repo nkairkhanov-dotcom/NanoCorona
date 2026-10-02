@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nanocorona.local/schema/edit.schema.json",
+  "title": "NanoCorona Edit Plan",
+  "type": "object",
+  "required": ["schemaVersion", "operations"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "target", "instruction"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["replace", "modify", "add", "remove", "preserve"]
+          },
+          "target": { "type": "string" },
+          "instruction": { "type": "string" },
+          "strength": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "protected": { "type": "boolean" },
+          "appearanceOnly": { "type": "boolean" },
+          "mask": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "globalConstraints": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}
