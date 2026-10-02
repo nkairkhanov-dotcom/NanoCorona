@@ -222,7 +222,7 @@ namespace NanoCorona.Network
                 "and an architecture protection mask. Use them as spatial/control references, not as " +
                 "visible textures. Preserve camera composition, architectural geometry, facade layout, " +
                 "window placement and all regions marked protected. Prefer appearance, lighting, material " +
-                "and environment changes. Do not invent structural changes. " +
+                "and environment changes. Do not invent structural changes. The architecture protection mask is authoritative; never change protected architecture pixels. " +
                 "Requested edit strength: " +
                 ClampStrength(request.Strength).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) +
                 ".\n\nUSER PROMPT:\n" + request.Prompt +
