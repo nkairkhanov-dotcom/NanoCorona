@@ -131,6 +131,7 @@ namespace NanoCorona.Network
         {
             var scene = File.ReadAllText(request.SceneJsonPath, Encoding.UTF8);
             var aspectRatio = ReadAspectRatio(scene);
+            var editJson = ReadEditPlan(request.EditJsonPath);
 
             return new ProviderRequest
             {
@@ -138,7 +139,7 @@ namespace NanoCorona.Network
                 Model = string.IsNullOrWhiteSpace(request.Model)
                     ? "gemini-3-pro-image"
                     : request.Model,
-                Prompt = BuildPrompt(request, scene),
+                Prompt = BuildPrompt(request, scene, editJson),
                 Resolution = string.IsNullOrWhiteSpace(request.Resolution) ? "2K" : request.Resolution,
                 AspectRatio = aspectRatio,
                 Strength = ClampStrength(request.Strength),
@@ -212,10 +213,10 @@ namespace NanoCorona.Network
                 System.Globalization.CultureInfo.InvariantCulture, out result) ? result : 0;
         }
 
-        private static string BuildPrompt(GenerationRequest request, string sceneJson)
+        private static string BuildPrompt(GenerationRequest request, string sceneJson, string editJson)
         {
             return
-                "You are editing an architectural visualization. " +
+                "You are performing a controlled edit of an architectural visualization. " +
                 "The first image is the Corona Beauty render and is the primary visual source. " +
                 "The following images are technical references in order: Z-Depth, shading normals, " +
                 "and an architecture protection mask. Use them as spatial/control references, not as " +
@@ -225,6 +226,7 @@ namespace NanoCorona.Network
                 "Requested edit strength: " +
                 ClampStrength(request.Strength).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) +
                 ".\n\nUSER PROMPT:\n" + request.Prompt +
+                "\n\nEDIT PLAN (provider-agnostic JSON):\n" + editJson +
                 "\n\nSCENE CONTEXT (provider-agnostic JSON):\n" + sceneJson;
         }
 
@@ -285,8 +287,32 @@ namespace NanoCorona.Network
             RequireFile(request.DepthPath, "Depth");
             RequireFile(request.NormalsPath, "Normals");
             RequireFile(request.ArchitectureMaskPath, "Architecture mask");
+            RequireFile(request.EditJsonPath, "Edit.json");
             if (string.IsNullOrWhiteSpace(request.Prompt))
                 throw new NanoNetworkException("Prompt is empty.", "PROMPT_EMPTY");
+        }
+
+        private static string ReadEditPlan(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                throw new NanoCoronaException("Edit.json file is missing.", "EDIT_MISSING");
+
+            var json = File.ReadAllText(path, Encoding.UTF8);
+            if (string.IsNullOrWhiteSpace(json))
+                throw new NanoNetworkException("Edit.json is empty.", "EDIT_EMPTY");
+
+            try
+            {
+                var root = new JavaScriptSerializer().DeserializeObject(json) as Dictionary<string, object>;
+                if (root == null || !root.ContainsKey("operations"))
+                    throw new NanoNetworkException("Edit.json has no operations array.", "EDIT_INVALID");
+                return json;
+            }
+            catch (NanoNetworkException) { throw; }
+            catch (Exception ex)
+            {
+                throw new NanoNetworkException("Edit.json is invalid JSON: " + ex.Message, "EDIT_INVALID");
+            }
         }
 
         private static void RequireFile(string path, string label)
