@@ -403,7 +403,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             sceneJsonPath = r.sceneJsonPath
             resultPath = r.beautyPath
             sceneLabel.text = ("Scene.json: " + sceneJsonPath)
-            editLabel.text = "Edit.json: " + editJsonPath
+            editLabel.text = "Edit.json: will be created on Generate"
             packageLabel.text = "Beauty + Depth + Normals + Architecture Mask"
             previewBeauty r.beautyPath
             setStatus "Passes + Scene.json ready"
