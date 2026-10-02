@@ -41,6 +41,24 @@
           "additionalProperties": true
         }
       },
+      "properties": {
+        "passes": {
+          "type": "object",
+          "properties": {
+            "beauty": { "type": "string" },
+            "depth": { "type": "string" },
+            "normals": { "type": "string" },
+            "architectureMask": { "type": "string" },
+            "zDepthRange": {
+              "type": ["array", "null"],
+              "items": { "type": "number" },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "additionalProperties": true
+        }
+      },
       "additionalProperties": true
     },
     "regions": {
