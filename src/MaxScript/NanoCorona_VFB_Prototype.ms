@@ -17,14 +17,38 @@ try (cui.UnRegisterDialogBar NanoCoronaVfbPrototype) catch()
 try (destroyDialog NanoCoronaVfbPrototype) catch()
 
 NanoCoronaPrototypeDir = getFilenamePath (getSourceFileName())
-try
+
+global NanoCoronaLoadRenderExtraction
+fn NanoCoronaLoadRenderExtraction =
 (
-    if NanoCoronaRenderExtraction == undefined do
-        fileIn (NanoCoronaPrototypeDir + "NanoCorona_RenderExtraction.ms")
+    local extractionPath = ""
+    local loaded = false
+
+    extractionPath = NanoCoronaPrototypeDir + "NanoCorona_RenderExtraction.ms"
+    if not doesFileExist extractionPath then
+    (
+        try (extractionPath = (getDir #userScripts) + "\\NanoCorona\\NanoCorona_RenderExtraction.ms") catch()
+    )
+
+    if not doesFileExist extractionPath then return false
+
+    try
+    (
+        fileIn extractionPath
+        loaded = (NanoCoronaRenderExtraction != undefined)
+    )
+    catch
+    (
+        loaded = false
+    )
+
+    loaded
 )
-catch
+
+if not NanoCoronaLoadRenderExtraction() then
 (
-    try (fileIn (NanoCoronaPrototypeDir + "NanoCorona_RenderExtraction.ms")) catch()
+    global NanoCoronaExtractionLoadError
+    NanoCoronaExtractionLoadError = "NanoCorona_RenderExtraction.ms could not be loaded."
 )
 
 rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
