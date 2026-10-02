@@ -117,6 +117,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         (
             sceneJsonPath = r.sceneJsonPath
             resultPath = r.beautyPath
+            sceneLabel.text = ("Scene.json: " + sceneJsonPath)
+            packageLabel.text = "Beauty + Depth + Normals + Architecture Mask"
             previewBeauty r.beautyPath
             setStatus "Passes + Scene.json ready"
             true
