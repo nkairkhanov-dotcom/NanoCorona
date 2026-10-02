@@ -18,16 +18,36 @@ Core pipeline:
 - [Research Protocol](docs/RESEARCH_PROTOCOL.md)
 - [UI Specification](docs/UI_SPEC.md)
 - [Corona VFB Panel Prototype](docs/PROTOTYPE_VFB_PANEL.md)
+- [Render Extraction](docs/RENDER_EXTRACTION.md)
 - [Scene JSON Schema](schemas/scene.schema.json)
 - [Edit JSON Schema](schemas/edit.schema.json)
 
-## First UI prototype
+## Current prototype
 
-The first Corona-VFB-first prototype is now in:
+The Corona-VFB-first prototype is now connected to the first structured input pipeline.
+
+Files:
 
     src/MaxScript/NanoCorona_VFB_Prototype.ms
+    src/MaxScript/NanoCorona_RenderExtraction.ms
 
-It opens the real Corona VFB, creates a dockable NanoCorona right panel, and provides working Prompt / Strength / Generate / Result controls. Generate currently performs a local VFB snapshot rather than an AI/network call; this isolates UI and framebuffer integration from the upcoming provider implementation.
+Workflow:
+
+    Select architecture objects
+          ↓
+    Setup Passes
+          ↓
+    Corona render
+          ↓
+    Extract
+          ↓
+    Beauty + Z-Depth + Normals + Architecture Mask
+          ↓
+    Scene.json
+
+The extraction module creates/reuses Corona render elements, reads the current Corona VFB, saves the passes under the 3ds Max temp directory, and generates a provider-agnostic Scene.json.
+
+The Generate button currently stops at this structured input package. Gemini/Nano Banana transport comes next.
 
 ## Development principle
 
@@ -37,8 +57,8 @@ The repository is the source of truth for project decisions, specifications, sch
 
 ## Current status
 
-Phase 0 — repository foundation.
-
 UI prototype milestone — Corona VFB + dockable NanoCorona panel.
 
-Next implementation target: Beauty + Z-Depth + Normals + initial architecture/environment masks.
+Data milestone — Beauty + Z-Depth + Normals + Architecture Mask + Scene.json.
+
+Next implementation target: Edit.json generation and C# provider transport.

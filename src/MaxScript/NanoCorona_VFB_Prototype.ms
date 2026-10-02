@@ -1,15 +1,13 @@
 /*
     NanoCorona — Corona VFB right-panel prototype
-    Target: 3ds Max + Corona Renderer
-    Prototype only: Generate currently snapshots the current Corona VFB Beauty
-    into a local result file and shows it in the Result area. Provider/network
-    integration comes next.
 
-    Usage:
-      1. Set Corona as the active renderer.
-      2. Evaluate this file in MAXScript.
-      3. Corona VFB opens and NanoCorona docks to the right.
-      4. Enter a prompt, set Strength, press Generate.
+    UI milestone:
+      Corona VFB + NanoCorona panel
+
+    Data milestone:
+      Beauty + Z-Depth + Normals + Architecture Mask + Scene.json
+
+    Provider/network integration intentionally comes later.
 */
 
 global NanoCoronaVfbPrototype
@@ -17,22 +15,27 @@ global NanoCoronaVfbPrototype
 try (cui.UnRegisterDialogBar NanoCoronaVfbPrototype) catch()
 try (destroyDialog NanoCoronaVfbPrototype) catch()
 
-rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:680
+local prototypeDir = getFilenamePath (getSourceFileName())
+try
+(
+    if NanoCoronaRenderExtraction == undefined do
+        fileIn (prototypeDir + "NanoCorona_RenderExtraction.ms")
+)
+catch
+(
+    try (fileIn (prototypeDir + "NanoCorona_RenderExtraction.ms")) catch()
+)
+
+rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 (
     local lastResultBitmap = undefined
     local resultPath = ""
+    local sceneJsonPath = ""
     local busy = false
 
     fn setStatus messageText =
     (
         statusLabel.text = messageText
-    )
-
-    fn ensureResultDirectory =
-    (
-        local dir = (getDir #temp) + "\\NanoCorona"
-        if not doesFileExist dir do makeDir dir
-        dir
     )
 
     fn openCoronaVfb =
@@ -49,52 +52,81 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:680
         )
     )
 
-    fn captureBeauty =
+    fn previewBeauty beautyPath =
     (
-        local sourceBmp = undefined
+        if beautyPath == "" or not doesFileExist beautyPath then return false
 
         try
         (
-            sourceBmp = CoronaRenderer.CoronaFp.getVfbContent 0 true false
-        )
-        catch
-        (
-            sourceBmp = undefined
-        )
+            local bmp = openBitmap beautyPath
+            if bmp != undefined then
+            (
+                if lastResultBitmap != undefined do
+                (
+                    try (free lastResultBitmap) catch()
+                    lastResultBitmap = undefined
+                )
 
-        if sourceBmp == undefined then
+                lastResultBitmap = copy bmp
+                resultPreview.bitmap = lastResultBitmap
+                resultPathLabel.text = beautyPath
+                close bmp
+                true
+            )
+            else false
+        )
+        catch(false)
+    )
+
+    fn setupPasses =
+    (
+        if NanoCoronaRenderExtraction == undefined then
         (
-            messageBox "No Beauty image is available in the Corona VFB. Render a frame first." title:"NanoCorona"
-            setStatus "No Beauty render"
+            messageBox "Render extraction module is not loaded." title:"NanoCorona"
+            setStatus "Extraction module unavailable"
             return false
         )
 
-        local dir = ensureResultDirectory()
-        resultPath = dir + "\\NanoCorona_Prototype_Result.png"
+        local r = NanoCoronaRenderExtraction.setupPasses()
 
-        try
+        if r[1] then
         (
-            sourceBmp.filename = resultPath
-            save sourceBmp quiet:true
-
-            if lastResultBitmap != undefined do
-            (
-                try (free lastResultBitmap) catch()
-                lastResultBitmap = undefined
-            )
-
-            lastResultBitmap = copy sourceBmp
-            resultPreview.bitmap = lastResultBitmap
-            resultPathLabel.text = resultPath
-            setStatus "Result ready (prototype snapshot)"
-            close sourceBmp
+            setStatus r[3]
+            messageBox (r[3] + "\n\nRender the frame again, then press Extract Passes.") title:"NanoCorona"
             true
         )
-        catch
+        else
         (
-            try (close sourceBmp) catch()
-            messageBox "Could not save the prototype result." title:"NanoCorona"
-            setStatus "Result save failed"
+            messageBox r[3] title:"NanoCorona"
+            setStatus r[3]
+            false
+        )
+    )
+
+    fn extractPasses =
+    (
+        if NanoCoronaRenderExtraction == undefined then
+        (
+            messageBox "Render extraction module is not loaded." title:"NanoCorona"
+            return false
+        )
+
+        local r = NanoCoronaRenderExtraction.extractCurrentVfb()
+
+        if r.success then
+        (
+            sceneJsonPath = r.sceneJsonPath
+            resultPath = r.beautyPath
+            sceneLabel.text = ("Scene.json: " + sceneJsonPath)
+            packageLabel.text = "Beauty + Depth + Normals + Architecture Mask"
+            previewBeauty r.beautyPath
+            setStatus "Passes + Scene.json ready"
+            true
+        )
+        else
+        (
+            messageBox r.message title:"NanoCorona"
+            setStatus r.message
             false
         )
     )
@@ -105,19 +137,19 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:680
 
         busy = true
         generateButton.enabled = false
-        setStatus "Generating..."
+        setupPassesButton.enabled = false
+        extractPassesButton.enabled = false
+        setStatus "Extracting Corona inputs..."
         progress.value = 15
 
-        -- Prototype transport: no network call yet.
-        -- The UI flow is kept identical to the future provider path.
-        progress.value = 50
-
-        local ok = captureBeauty()
+        -- This is the first structured pipeline milestone.
+        -- AI/network transport is deliberately not connected yet.
+        local ok = extractPasses()
 
         if ok then
         (
             progress.value = 100
-            setStatus ("Result ready • Strength " + (strengthSpinner.value as string))
+            setStatus ("Input package ready • Strength " + (strengthSpinner.value as string))
         )
         else
         (
@@ -125,6 +157,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:680
         )
 
         generateButton.enabled = true
+        setupPassesButton.enabled = true
+        extractPassesButton.enabled = true
         busy = false
     )
 
@@ -144,18 +178,20 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:680
         )
         else
         (
-            messageBox "Generate a result first." title:"NanoCorona"
+            messageBox "Extract the current VFB first." title:"NanoCorona"
         )
     )
 
     group "NanoCorona" (
         label headerLabel "AI image editing for Corona VFB" align:#left
-        label providerLabel "Provider: Prototype / local VFB snapshot" align:#left
+        label providerLabel "Provider: prototype / local extraction" align:#left
     )
 
     group "Source" (
         dropdownlist sourceDrop "Source:" items:#("Beauty (Corona VFB)", "Z-Depth", "Normals", "Mask") selection:1 width:300
         button openVfbButton "Open / Focus Corona VFB" width:300
+        button setupPassesButton "Setup Depth / Normals / Architecture Mask" width:300
+        button extractPassesButton "Extract Passes + Scene.json" width:300
     )
 
     group "Prompt" (
@@ -182,15 +218,45 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:680
         button captureButton "Capture VFB" width:145
     )
 
+    group "Scene package" (
+        label sceneLabel "Scene.json: not generated" width:300 align:#left
+        label packageLabel "Beauty / Depth / Normals / Mask" width:300 align:#left
+    )
+
     group "Prototype notes" (
-        label note1 "Generate currently snapshots Corona Beauty." align:#left
-        label note2 "Next: Beauty → Depth → Normals → Mask → Scene.json → API." align:#left
-        label note3 "Network/API calls are intentionally not in this prototype." align:#left
+        label note1 "Generate now builds the structured Corona input package." align:#left
+        label note2 "Next: Scene.json + Edit.json → NanoNetwork.dll → provider." align:#left
+        label note3 "Select architectural objects before Setup Passes." align:#left
     )
 
     on openVfbButton pressed do openCoronaVfb()
+    on setupPassesButton pressed do setupPasses()
+    on extractPassesButton pressed do extractPasses()
     on generateButton pressed do generatePrototype()
-    on captureButton pressed do captureBeauty()
+    on captureButton pressed do
+    (
+        local ok = false
+        try
+        (
+            local bmp = CoronaRenderer.CoronaFp.getVfbContent 0 true false
+            if bmp != undefined then
+            (
+                local dir = (getDir #temp) + "\\NanoCorona\\Current"
+                if not doesFileExist dir do makeDir dir
+                local p = dir + "\\beauty.png"
+                bmp.filename = p
+                save bmp quiet:true
+                close bmp
+                resultPath = p
+                previewBeauty p
+                setStatus "Beauty captured"
+                ok = true
+            )
+        )
+        catch()
+
+        if not ok do setStatus "No Beauty render"
+    )
     on showResultButton pressed do showResult()
 
     on NanoCoronaVfbPrototype open do
@@ -199,8 +265,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:680
     )
 )
 
-createDialog NanoCoronaVfbPrototype 340 680 style:#(#style_titlebar, #style_sysmenu, #style_resizing)
+createDialog NanoCoronaVfbPrototype 340 760 style:#(#style_titlebar, #style_sysmenu, #style_resizing)
 cui.RegisterDialogBar NanoCoronaVfbPrototype style:#(#cui_dock_right, #cui_floatable, #cui_handles)
 cui.DockDialogBar NanoCoronaVfbPrototype #cui_dock_right
 
-setStatus "Ready — Corona VFB opened. Render a Beauty frame, then Generate."
+setStatus "Ready — select architecture, Setup Passes, then render."
