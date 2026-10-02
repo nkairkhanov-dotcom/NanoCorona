@@ -35,13 +35,13 @@ struct NanoCoronaRenderExtraction
             matchPattern (classOf renderers.current as string) pattern:"Corona*" ignoreCase:true
         )
         catch(false)
-    )
+    ),
 
     fn ensureDir dirPath =
     (
         if not doesFileExist dirPath do makeDir dirPath
         dirPath
-    )
+    ),
 
     fn jsonEscape value =
     (
@@ -52,22 +52,22 @@ struct NanoCoronaRenderExtraction
         s = substituteString s "\n" "\\n"
         s = substituteString s "\t" "\\t"
         s
-    )
+    ),
 
     fn jsonString value =
     (
         "\"" + (jsonEscape value) + "\""
-    )
+    ),
 
     fn jsonBool value =
     (
         if value then "true" else "false"
-    )
+    ),
 
     fn jsonNumber value =
     (
         formattedPrint value format:"%.6f"
-    )
+    ),
 
     fn getCamera =
     (
@@ -78,12 +78,12 @@ struct NanoCoronaRenderExtraction
             try (cam = viewport.getCamera()) catch()
         )
         cam
-    )
+    ),
 
     fn getElementManager =
     (
         maxOps.GetCurRenderElementMgr()
-    )
+    ),
 
     fn findElementByClass targetClass =
     (
@@ -96,7 +96,7 @@ struct NanoCoronaRenderExtraction
             if (classOf el) == targetClass do return el
         )
         undefined
-    )
+    ),
 
     fn findElementIndexByClass targetClass =
     (
@@ -109,7 +109,7 @@ struct NanoCoronaRenderExtraction
             if (classOf el) == targetClass do return i
         )
         undefined
-    )
+    ),
 
     fn addElementIfMissing elementClass elementName =
     (
@@ -128,7 +128,7 @@ struct NanoCoronaRenderExtraction
             el = elementClass elementName:elementName
             if mgr.AddRenderElement el then el else undefined
         )
-    )
+    ),
 
     fn configureArchitectureMask =
     (
@@ -172,7 +172,7 @@ struct NanoCoronaRenderExtraction
         )
 
         #(true, ("Architecture mask configured from " + selectedNodes.count as string + " selected object(s)."))
-    )
+    ),
 
     fn setupPasses =
     (
@@ -204,7 +204,7 @@ struct NanoCoronaRenderExtraction
         mgr.SetElementsActive true
 
         #(true, #(depth, normals, findElementByClass CMasking_Mask), "Passes ready. Render the frame again so Corona generates Depth, Normals and Architecture Mask.")
-    )
+    ),
 
     fn saveBitmap bmp path =
     (
@@ -216,7 +216,7 @@ struct NanoCoronaRenderExtraction
             true
         )
         catch(false)
-    )
+    ),
 
     fn getChannelBitmap channelIndex =
     (
@@ -232,7 +232,7 @@ struct NanoCoronaRenderExtraction
         )
 
         bmp
-    )
+    ),
 
     fn writeSceneJson rootDir beautyPath depthPath normalsPath maskPath =
     (
@@ -365,7 +365,7 @@ struct NanoCoronaRenderExtraction
         format "%" json to:f
         close f
         path
-    )
+    ),
 
     fn extractCurrentVfb =
     (
