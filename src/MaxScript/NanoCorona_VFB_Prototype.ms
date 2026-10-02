@@ -32,10 +32,231 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     local resultPath = ""
     local sceneJsonPath = ""
     local busy = false
+    local networkBridge = undefined
+    local networkDllPath = ""
+    local currentJobId = ""
+    local networkReady = false
 
     fn setStatus messageText =
     (
         statusLabel.text = messageText
+    )
+
+    fn findNetworkDll =
+    (
+        local candidates = #()
+        append candidates (prototypeDir + "..\\NanoNetwork\\bin\\Release\\NanoNetwork.dll")
+        append candidates (prototypeDir + "..\\NanoNetwork\\bin\\Debug\\NanoNetwork.dll")
+        append candidates ((getDir #userScripts) + "\\NanoCorona\\NanoNetwork.dll")
+        append candidates ((getDir #plugcfg) + "\\NanoCorona\\NanoNetwork.dll")
+        append candidates (getDir #temp + "\\NanoCorona\\NanoNetwork.dll")
+
+        for p in candidates do
+        (
+            if doesFileExist p then return p
+        )
+        undefined
+    )
+
+    fn loadNetworkBridge =
+    (
+        if networkReady and networkBridge != undefined then return true
+
+        local dll = findNetworkDll()
+
+        if dll == undefined then
+        (
+            networkDllPath = ""
+            setStatus "NanoNetwork.dll not found"
+            return false
+        )
+
+        try
+        (
+            dotNet.loadAssembly dll
+            networkBridge = dotNetObject "NanoCorona.Network.NanoNetworkBridge"
+            networkDllPath = dll
+            networkReady = true
+            true
+        )
+        catch
+        (
+            networkBridge = undefined
+            networkReady = false
+            setStatus "Could not load NanoNetwork.dll"
+            false
+        )
+    )
+
+    fn ensureApiKey =
+    (
+        if not loadNetworkBridge() then return false
+
+        try
+        (
+            if networkBridge.HasGeminiApiKey() then return true
+        )
+        catch()
+
+        local key = getString caption:"Gemini API Key" prompt:"Enter your Gemini API key:"
+        if key == undefined or key == "" then
+        (
+            setStatus "Gemini API key is required"
+            return false
+        )
+
+        try
+        (
+            networkBridge.SaveGeminiApiKey key
+            setStatus "Gemini API key saved"
+            true
+        )
+        catch
+        (
+            setStatus "Could not save Gemini API key"
+            false
+        )
+    )
+
+    fn getResolutionValue =
+    (
+        if resolutionDrop.selection == 3 then "4K"
+        else if resolutionDrop.selection == 1 then "1K"
+        else "2K"
+    )
+
+    fn startNetworkGeneration =
+    (
+        if not loadNetworkBridge() then
+        (
+            messageBox "NanoNetwork.dll was not found. Build/copy NanoNetwork.dll before using Generate AI." title:"NanoCorona"
+            return false
+        )
+
+        if not ensureApiKey() then return false
+
+        if sceneJsonPath == "" or not doesFileExist sceneJsonPath then
+        (
+            setStatus "Scene.json is missing"
+            return false
+        )
+
+        local outputDir = getFilenamePath sceneJsonPath
+        local stamp = (localTime as string)
+        stamp = substituteString stamp ":" "_"
+        stamp = substituteString stamp "/" "_"
+        stamp = substituteString stamp " " "_"
+        local outputPath = outputDir + "\nanocorona_result_" + stamp + ".png"
+
+        try
+        (
+            currentJobId = networkBridge.StartGeneration                 sceneJsonPath                 resultPath                 (outputDir + "\depth.png")                 (outputDir + "\normals.png")                 (outputDir + "\architecture_mask.png")                 promptEdit.text                 strengthSpinner.value                 (getResolutionValue())                 "gemini-3-pro-image"                 outputPath                 ""
+
+            setStatus "Gemini generation started..."
+            progress.value = 50
+            jobTimer.active = true
+            true
+        )
+        catch
+        (
+            currentJobId = ""
+            setStatus "Could not start Gemini generation"
+            messageBox "Could not start the AI request. Check NanoNetwork.dll and the Gemini API key." title:"NanoCorona"
+            false
+        )
+    )
+
+    fn pollNetworkJob =
+    (
+        if currentJobId == "" or networkBridge == undefined then
+        (
+            jobTimer.active = false
+            return()
+        )
+
+        try
+        (
+            local state = networkBridge.GetJobState currentJobId
+            local p = networkBridge.GetJobProgress currentJobId
+            progress.value = p
+
+            if state == "Queued" or state == "Preparing" then
+                setStatus "Preparing AI request..."
+            else if state == "Uploading" then
+                setStatus "Uploading Corona passes..."
+            else if state == "Generating" then
+                setStatus "Gemini is generating..."
+            else if state == "Saving" then
+                setStatus "Saving result..."
+            else if state == "Canceling" then
+                setStatus "Canceling..."
+            else if state == "Succeeded" then
+            (
+                jobTimer.active = false
+                resultPath = networkBridge.GetJobResultPath currentJobId
+                if resultPath != "" and doesFileExist resultPath then
+                (
+                    previewBeauty resultPath
+                    setStatus ("AI result ready • " + ((networkBridge.GetJobDurationMs currentJobId) as string) + " ms")
+                )
+                else
+                (
+                    setStatus "Generation succeeded but result file is missing"
+                )
+                generateButton.enabled = true
+                setupPassesButton.enabled = true
+                extractPassesButton.enabled = true
+                cancelButton.enabled = false
+                busy = false
+            )
+            else if state == "Failed" then
+            (
+                jobTimer.active = false
+                local code = networkBridge.GetJobErrorCode currentJobId
+                local message = networkBridge.GetJobErrorMessage currentJobId
+                setStatus ("AI failed: " + code)
+                messageBox (message + "\n\nError: " + code) title:"NanoCorona"
+                generateButton.enabled = true
+                setupPassesButton.enabled = true
+                extractPassesButton.enabled = true
+                cancelButton.enabled = false
+                busy = false
+            )
+            else if state == "Canceled" then
+            (
+                jobTimer.active = false
+                progress.value = 0
+                setStatus "AI generation canceled"
+                generateButton.enabled = true
+                setupPassesButton.enabled = true
+                extractPassesButton.enabled = true
+                cancelButton.enabled = false
+                busy = false
+            )
+        )
+        catch
+        (
+            jobTimer.active = false
+            setStatus "Could not poll AI job"
+            generateButton.enabled = true
+            setupPassesButton.enabled = true
+            extractPassesButton.enabled = true
+            cancelButton.enabled = false
+            busy = false
+        )
+    )
+
+    fn cancelNetworkGeneration =
+    (
+        if currentJobId != "" and networkBridge != undefined then
+        (
+            try
+            (
+                networkBridge.CancelGeneration currentJobId
+                setStatus "Canceling AI generation..."
+            )
+            catch()
+        )
     )
 
     fn openCoronaVfb =
@@ -142,24 +363,29 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         setStatus "Extracting Corona inputs..."
         progress.value = 15
 
-        -- This is the first structured pipeline milestone.
-        -- AI/network transport is deliberately not connected yet.
         local ok = extractPasses()
 
         if ok then
         (
-            progress.value = 100
-            setStatus ("Input package ready • Strength " + (strengthSpinner.value as string))
+            progress.value = 20
+            if not startNetworkGeneration() then
+            (
+                generateButton.enabled = true
+                setupPassesButton.enabled = true
+                extractPassesButton.enabled = true
+                cancelButton.enabled = false
+                busy = false
+            )
         )
         else
         (
             progress.value = 0
+            generateButton.enabled = true
+            setupPassesButton.enabled = true
+            extractPassesButton.enabled = true
+            cancelButton.enabled = false
+            busy = false
         )
-
-        generateButton.enabled = true
-        setupPassesButton.enabled = true
-        extractPassesButton.enabled = true
-        busy = false
     )
 
     fn showResult =
@@ -184,7 +410,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     group "NanoCorona" (
         label headerLabel "AI image editing for Corona VFB" align:#left
-        label providerLabel "Provider: prototype / local extraction" align:#left
+        label providerLabel "Provider: Gemini • Nano Banana Pro" align:#left
     )
 
     group "Source" (
@@ -206,10 +432,13 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     )
 
     group "Generate" (
-        button generateButton "GENERATE AI" width:300 height:38
+        button generateButton "GENERATE AI" width:300 height:38 across:2
+        button cancelButton "CANCEL" width:145 enabled:false
         progressbar progress "" value:0 width:300 height:8
         label statusLabel "Ready — render Beauty in Corona first." align:#left
     )
+
+    timer jobTimer "AI job timer" interval:500 active:false
 
     group "Result" (
         imgTag resultPreview "" width:300 height:170 style:#bmp_stretch
@@ -224,8 +453,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     )
 
     group "Prototype notes" (
-        label note1 "Generate now builds the structured Corona input package." align:#left
-        label note2 "Next: Scene.json + Edit.json → NanoNetwork.dll → provider." align:#left
+        label note1 "Generate: Corona passes → NanoNetwork.dll → Gemini → Max preview." align:#left
+        label note2 "AI result is shown in this panel; Corona VFB source remains unchanged." align:#left
         label note3 "Select architectural objects before Setup Passes." align:#left
     )
 
@@ -233,6 +462,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     on setupPassesButton pressed do setupPasses()
     on extractPassesButton pressed do extractPasses()
     on generateButton pressed do generatePrototype()
+    on cancelButton pressed do cancelNetworkGeneration()
+    on jobTimer tick do pollNetworkJob()
     on captureButton pressed do
     (
         local ok = false
@@ -262,6 +493,22 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     on NanoCoronaVfbPrototype open do
     (
         openCoronaVfb()
+        if loadNetworkBridge() then
+        (
+            if networkBridge.HasGeminiApiKey() then
+                setStatus "Ready — Gemini API key configured."
+            else
+                setStatus "Ready — Gemini API key required on first Generate."
+        )
+    )
+
+    on NanoCoronaVfbPrototype close do
+    (
+        try (jobTimer.active = false) catch()
+        if currentJobId != "" and networkBridge != undefined do
+        (
+            try (networkBridge.CancelGeneration currentJobId) catch()
+        )
     )
 )
 
