@@ -71,4 +71,4 @@ UI prototype milestone — Corona VFB + dockable NanoCorona panel.
 
 Data milestone — Beauty + Z-Depth + Normals + Architecture Mask + Scene.json.
 
-Phase 6 productization is implemented on the product branch: UI polish, installation script, user guide, compatibility matrix and CI artifact packaging. Live 3ds Max/Corona acceptance testing remains an explicit release gate.
+The current product target is **3ds Max 2026 + Corona 15**. NanoNetwork is ported to **.NET 8**, the installer targets the 3ds Max 2026 LocalAppData user tree, and the CI build produces the .NET 8 runtime package. Live 3ds Max/Corona acceptance testing remains the final release gate.

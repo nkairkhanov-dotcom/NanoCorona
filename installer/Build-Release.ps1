@@ -5,7 +5,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 $project = Join-Path $RepoRoot "src\NanoNetwork\NanoNetwork.csproj"
-$dll = Join-Path $RepoRoot "src\NanoNetwork\bin\Release\NanoNetwork.dll"
 if (!(Test-Path $project)) { throw "Invalid repository root: $RepoRoot" }
 
 $msbuild = Get-Command msbuild.exe -ErrorAction SilentlyContinue
