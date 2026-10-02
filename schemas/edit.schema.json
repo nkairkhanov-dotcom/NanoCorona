@@ -3,11 +3,11 @@
   "$id": "https://nanocorona.local/schema/edit.schema.json",
   "title": "NanoCorona Edit Plan",
   "type": "object",
-  "required": ["schemaVersion", "operations"],
+  "required": ["schemaVersion", "preset", "operations", "globalConstraints"],
   "properties": {
-    "schemaVersion": {
-      "type": "string"
-    },
+    "schemaVersion": { "type": "string" },
+    "preset": { "type": "string" },
+    "source": { "type": "string" },
     "operations": {
       "type": "array",
       "items": {
@@ -20,11 +20,7 @@
           },
           "target": { "type": "string" },
           "instruction": { "type": "string" },
-          "strength": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
-          },
+          "strength": { "type": "number", "minimum": 0, "maximum": 1 },
           "protected": { "type": "boolean" },
           "appearanceOnly": { "type": "boolean" },
           "mask": { "type": "string" }
