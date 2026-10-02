@@ -137,6 +137,131 @@ struct NanoCoronaRenderExtraction
         )
     ),
 
+    fn findPropertyName target candidates =
+    (
+        local props = #()
+        local prop = undefined
+        local candidate = ""
+        try (props = getPropNames target) catch (props = #())
+        for candidate in candidates do
+        (
+            for prop in props do
+            (
+                if (toLower (prop as string)) == (toLower (candidate as string)) then return prop
+            )
+        )
+        undefined
+    ),
+
+    fn setPropertyIfAvailable target candidates value =
+    (
+        local prop = undefined
+        prop = findPropertyName target candidates
+        if prop == undefined then false
+        else
+        (
+            try
+            (
+                setProperty target prop value
+                true
+            )
+            catch(false)
+        )
+    ),
+
+    fn getPropertyIfAvailable target candidates defaultValue =
+    (
+        local prop = undefined
+        prop = findPropertyName target candidates
+        if prop == undefined then defaultValue
+        else
+        (
+            try (getProperty target prop) catch(defaultValue)
+        )
+    ),
+
+    fn calculateCameraDepthRange cam =
+    (
+        local minDepth = 1.0e9
+        local maxDepth = 0.0
+        local found = false
+        local bb = undefined
+        local n = undefined
+        local corners = #()
+        local p = undefined
+        local depth = 0.0
+
+        if cam == undefined then return undefined
+
+        for n in geometry where (not n.isHidden and not n.isFrozen) do
+        (
+            try
+            (
+                bb = nodeGetBoundingBox n cam.transform
+                corners = #(
+                    [bb[1].x, bb[1].y, bb[1].z],
+                    [bb[1].x, bb[1].y, bb[2].z],
+                    [bb[1].x, bb[2].y, bb[1].z],
+                    [bb[1].x, bb[2].y, bb[2].z],
+                    [bb[2].x, bb[1].y, bb[1].z],
+                    [bb[2].x, bb[1].y, bb[2].z],
+                    [bb[2].x, bb[2].y, bb[1].z],
+                    [bb[2].x, bb[2].y, bb[2].z]
+                )
+                for p in corners do
+                (
+                    depth = -p.z
+                    if depth > 0.0 then
+                    (
+                        minDepth = amin minDepth depth
+                        maxDepth = amax maxDepth depth
+                        found = true
+                    )
+                )
+            )
+            catch()
+        )
+
+        if not found then return undefined
+
+        local span = maxDepth - minDepth
+        local padding = amax (span * 0.05) 0.1
+        minDepth = amax 0.01 (minDepth - padding)
+        maxDepth = maxDepth + padding
+
+        if maxDepth <= minDepth then
+            maxDepth = minDepth + 1.0
+
+        #(minDepth, maxDepth)
+    ),
+
+    fn configureZDepth depth cam =
+    (
+        local range = undefined
+        local useCameraRange
+        local minSet
+        local maxSet
+        local clipSet
+        local message
+
+        if depth == undefined then return #(false, undefined, "ZDepth element is undefined.")
+
+        range = calculateCameraDepthRange cam
+        if range == undefined then
+            return #(false, undefined, "Could not calculate camera-space ZDepth range from visible geometry.")
+
+        useCameraRange = setPropertyIfAvailable depth #("useCameraEnvironmentRange", "useCameraEnviroRange", "useEnviroRange", "useCameraRange", "useEnvironmentRange") false
+        minSet = setPropertyIfAvailable depth #("minZ", "minDepth", "minZDepth") range[1]
+        maxSet = setPropertyIfAvailable depth #("maxZ", "maxDepth", "maxZDepth") range[2]
+        clipSet = setPropertyIfAvailable depth #("clipOutput", "clipOutputTo01", "clipOutputTo0_1") true
+
+        message = "ZDepth range " + (formattedPrint range[1] format:"%.3f") + " - " + (formattedPrint range[2] format:"%.3f")
+        if not minSet or not maxSet then
+            message += " (Corona property names not exposed; range calculation saved for diagnostics only.)"
+
+        #(minSet and maxSet, range, message)
+    ),
+
     fn configureArchitectureMask =
     (
         local selectedNodes
@@ -188,10 +313,14 @@ struct NanoCoronaRenderExtraction
         local depth
         local normals
         local maskResult
+        local zDepthResult
+        local cam
         local mgr
         depth = undefined
         normals = undefined
         maskResult = undefined
+        zDepthResult = undefined
+        cam = undefined
         mgr = undefined
 
         if not isCoronaActive() then
@@ -207,6 +336,13 @@ struct NanoCoronaRenderExtraction
             return #(false, #(), "Could not create one or more Corona geometry render elements.")
         )
 
+        cam = getCamera()
+        zDepthResult = configureZDepth depth cam
+        if not zDepthResult[1] then
+        (
+            return #(false, #(depth, normals), zDepthResult[3])
+        )
+
         maskResult = configureArchitectureMask()
         if not maskResult[1] then
         (
@@ -216,7 +352,7 @@ struct NanoCoronaRenderExtraction
         mgr = getElementManager()
         mgr.SetElementsActive true
 
-        #(true, #(depth, normals, findElementByClass CMasking_Mask), "Passes ready. Render the frame again so Corona generates Depth, Normals and Architecture Mask.")
+        #(true, #(depth, normals, findElementByClass CMasking_Mask, zDepthResult[2]), "Passes ready. " + zDepthResult[3] + ". Render the frame again so Corona generates Depth, Normals and Architecture Mask.")
     ),
 
     fn saveBitmap bmp path =
@@ -417,6 +553,7 @@ struct NanoCoronaRenderExtraction
         local okDepth
         local okNormals
         local okMask
+        local zDepthRange
 
         result = NanoCoronaExtractionResult()
         baseDir = ""
@@ -434,6 +571,7 @@ struct NanoCoronaRenderExtraction
         okDepth = false
         okNormals = false
         okMask = false
+        zDepthRange = undefined
 
         if not isCoronaActive() then
         (
@@ -470,6 +608,14 @@ struct NanoCoronaRenderExtraction
 
         depthIndex = findElementIndexByClass CGeometry_ZDepth
         normalsIndex = findElementIndexByClass CGeometry_NormalsShading
+        try
+        (
+            zDepthRange = calculateCameraDepthRange (getCamera())
+        )
+        catch
+        (
+            zDepthRange = undefined
+        )
         maskIndex = findElementIndexByClass CMasking_Mask
 
         -- Corona VFB channel 0 is Beauty, 1 is Alpha, and extra render
