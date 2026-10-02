@@ -84,7 +84,6 @@ namespace NanoCorona.Network
             HttpStatus = httpStatus;
         }
     }
-}
 
     public sealed class VisionQaRequest
     {
