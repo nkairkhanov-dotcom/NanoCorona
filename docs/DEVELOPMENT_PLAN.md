@@ -93,7 +93,8 @@ E Beauty + Depth + Normals + Architecture Mask
 - [x] compatibility matrix
 - [x] documentation
 - [x] release CI artifact packaging
-- [ ] live 3ds Max/Corona acceptance test
+- [ ] live 3ds Max 2026 + Corona 15 acceptance test
+- [x] .NET 8 NanoNetwork bridge for 3ds Max 2026
 - [ ] signed production installer/release binary
 
 
