@@ -167,26 +167,31 @@ struct NanoCoronaRenderExtraction
 
     fn setupPasses =
     (
+        local depth = undefined
+        local normals = undefined
+        local maskResult = undefined
+        local mgr = undefined
+
         if not isCoronaActive() then
         (
             return #(false, #(), "Corona is not the active renderer.")
         )
 
-        local depth = addElementIfMissing CGeometry_ZDepth "NanoCorona_ZDepth"
-        local normals = addElementIfMissing CGeometry_NormalsShading "NanoCorona_NormalsShading"
+        depth = addElementIfMissing CGeometry_ZDepth "NanoCorona_ZDepth"
+        normals = addElementIfMissing CGeometry_NormalsShading "NanoCorona_NormalsShading"
 
         if depth == undefined or normals == undefined then
         (
             return #(false, #(), "Could not create one or more Corona geometry render elements.")
         )
 
-        local maskResult = configureArchitectureMask()
+        maskResult = configureArchitectureMask()
         if not maskResult[1] then
         (
             return #(false, #(depth, normals), maskResult[2])
         )
 
-        local mgr = getElementManager()
+        mgr = getElementManager()
         mgr.SetElementsActive true
 
         #(true, #(depth, normals, findElementByClass CMasking_Mask), "Passes ready. Render the frame again so Corona generates Depth, Normals and Architecture Mask.")
@@ -348,6 +353,21 @@ struct NanoCoronaRenderExtraction
     fn extractCurrentVfb =
     (
         local result = NanoCoronaExtractionResult()
+        local baseDir = ""
+        local root = ""
+        local beauty = undefined
+        local depthIndex = undefined
+        local normalsIndex = undefined
+        local maskIndex = undefined
+        local depthChannel = undefined
+        local normalsChannel = undefined
+        local maskChannel = undefined
+        local depthBmp = undefined
+        local normalsBmp = undefined
+        local maskBmp = undefined
+        local okDepth = false
+        local okNormals = false
+        local okMask = false
 
         if not isCoronaActive() then
         (
@@ -355,12 +375,11 @@ struct NanoCoronaRenderExtraction
             return result
         )
 
-        local baseDir = (getDir #temp) + "\\NanoCorona"
+        baseDir = (getDir #temp) + "\\NanoCorona"
         if not doesFileExist baseDir do makeDir baseDir
-        local root = ensureDir (baseDir + "\\Current")
+        root = ensureDir (baseDir + "\\Current")
         result.rootDir = root
 
-        local beauty = undefined
         try (beauty = CoronaRenderer.CoronaFp.getVfbContent 0 true false) catch()
 
         if beauty == undefined then
@@ -378,19 +397,19 @@ struct NanoCoronaRenderExtraction
         )
         try (close beauty) catch()
 
-        local depthIndex = findElementIndexByClass CGeometry_ZDepth
-        local normalsIndex = findElementIndexByClass CGeometry_NormalsShading
-        local maskIndex = findElementIndexByClass CMasking_Mask
+        depthIndex = findElementIndexByClass CGeometry_ZDepth
+        normalsIndex = findElementIndexByClass CGeometry_NormalsShading
+        maskIndex = findElementIndexByClass CMasking_Mask
 
         -- Corona VFB channel 0 is Beauty, 1 is Alpha, and extra render
         -- elements follow the render-element list with an offset of +2.
-        local depthChannel = if depthIndex != undefined then depthIndex + 2 else undefined
-        local normalsChannel = if normalsIndex != undefined then normalsIndex + 2 else undefined
-        local maskChannel = if maskIndex != undefined then maskIndex + 2 else undefined
+        depthChannel = if depthIndex != undefined then depthIndex + 2 else undefined
+        normalsChannel = if normalsIndex != undefined then normalsIndex + 2 else undefined
+        maskChannel = if maskIndex != undefined then maskIndex + 2 else undefined
 
-        local depthBmp = getChannelBitmap depthChannel
-        local normalsBmp = getChannelBitmap normalsChannel
-        local maskBmp = getChannelBitmap maskChannel
+        depthBmp = getChannelBitmap depthChannel
+        normalsBmp = getChannelBitmap normalsChannel
+        maskBmp = getChannelBitmap maskChannel
 
         if depthBmp == undefined or normalsBmp == undefined or maskBmp == undefined then
         (
@@ -405,9 +424,9 @@ struct NanoCoronaRenderExtraction
         result.normalsPath = root + "\\normals.png"
         result.architectureMaskPath = root + "\\architecture_mask.png"
 
-        local okDepth = saveBitmap depthBmp result.depthPath
-        local okNormals = saveBitmap normalsBmp result.normalsPath
-        local okMask = saveBitmap maskBmp result.architectureMaskPath
+        okDepth = saveBitmap depthBmp result.depthPath
+        okNormals = saveBitmap normalsBmp result.normalsPath
+        okMask = saveBitmap maskBmp result.architectureMaskPath
 
         try (close depthBmp) catch()
         try (close normalsBmp) catch()
