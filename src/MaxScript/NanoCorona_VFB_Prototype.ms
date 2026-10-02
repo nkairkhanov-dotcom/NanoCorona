@@ -151,11 +151,11 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             form.Controls.Add okButton
 
             cancelButton = dotNetObject "System.Windows.Forms.Button"
-            NanoCoronaVfbPrototype.cancelButton.Text = "Cancel"
-            NanoCoronaVfbPrototype.cancelButton.Left = 412
-            NanoCoronaVfbPrototype.cancelButton.Top = 72
-            NanoCoronaVfbPrototype.cancelButton.Width = 80
-            NanoCoronaVfbPrototype.cancelButton.DialogResult = (dotNetClass "System.Windows.Forms.DialogResult").Cancel
+            cancelButton.Text = "Cancel"
+            cancelButton.Left = 412
+            cancelButton.Top = 72
+            cancelButton.Width = 80
+            cancelButton.DialogResult = (dotNetClass "System.Windows.Forms.DialogResult").Cancel
             form.Controls.Add cancelButton
 
             form.AcceptButton = okButton
