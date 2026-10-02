@@ -355,7 +355,9 @@ struct NanoCoronaRenderExtraction
             return result
         )
 
-        local root = ensureDir ((getDir #temp) + "\\NanoCorona\\Current")
+        local baseDir = (getDir #temp) + "\\NanoCorona"
+        if not doesFileExist baseDir do makeDir baseDir
+        local root = ensureDir (baseDir + "\\Current")
         result.rootDir = root
 
         local beauty = undefined
