@@ -8,7 +8,7 @@ NanoCorona connects Corona renders and technical passes to an AI image generatio
 
 Core pipeline:
 
-`Corona → Beauty/Depth/Normals/Masks → Scene.json → Edit.json → AI → QA → Result`
+    Corona → Beauty/Depth/Normals/Masks → Scene.json → Edit.json → AI → QA → Result
 
 ## Documentation
 
@@ -16,12 +16,22 @@ Core pipeline:
 - [Architecture](docs/ARCHITECTURE.md)
 - [Development Plan](docs/DEVELOPMENT_PLAN.md)
 - [Research Protocol](docs/RESEARCH_PROTOCOL.md)
+- [UI Specification](docs/UI_SPEC.md)
+- [Corona VFB Panel Prototype](docs/PROTOTYPE_VFB_PANEL.md)
 - [Scene JSON Schema](schemas/scene.schema.json)
 - [Edit JSON Schema](schemas/edit.schema.json)
 
+## First UI prototype
+
+The first Corona-VFB-first prototype is now in:
+
+    src/MaxScript/NanoCorona_VFB_Prototype.ms
+
+It opens the real Corona VFB, creates a dockable NanoCorona right panel, and provides working Prompt / Strength / Generate / Result controls. Generate currently performs a local VFB snapshot rather than an AI/network call; this isolates UI and framebuffer integration from the upcoming provider implementation.
+
 ## Development principle
 
-Do not start with a complex UI. First prove the image pipeline and architectural preservation benchmark.
+Keep the UI contract stable while the image pipeline is implemented behind it. Do not rely on undocumented Corona VFB widget internals for the production path.
 
 The repository is the source of truth for project decisions, specifications, schemas, research protocol and implementation history.
 
@@ -29,4 +39,6 @@ The repository is the source of truth for project decisions, specifications, sch
 
 Phase 0 — repository foundation.
 
-Next implementation target: Corona render extraction (Beauty + Z-Depth + Normals + initial masks).
+UI prototype milestone — Corona VFB + dockable NanoCorona panel.
+
+Next implementation target: Beauty + Z-Depth + Normals + initial architecture/environment masks.
