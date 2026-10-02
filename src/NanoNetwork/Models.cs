@@ -85,3 +85,30 @@ namespace NanoCorona.Network
         }
     }
 }
+
+    public sealed class VisionQaRequest
+    {
+        public string SceneJsonPath { get; set; }
+        public string SourceBeautyPath { get; set; }
+        public string ResultPath { get; set; }
+        public string ArchitectureMaskPath { get; set; }
+        public string EditJsonPath { get; set; }
+        public string Prompt { get; set; }
+    }
+
+    public sealed class VisionQaResult
+    {
+        public bool Success { get; set; }
+        public double Confidence { get; set; }
+        public bool ArchitecturePreserved { get; set; }
+        public bool CameraPreserved { get; set; }
+        public bool CompositionPreserved { get; set; }
+        public bool EditSatisfied { get; set; }
+        public string Severity { get; set; }
+        public string Summary { get; set; }
+        public string[] Violations { get; set; }
+        public string RawText { get; set; }
+        public string ErrorCode { get; set; }
+        public string ErrorMessage { get; set; }
+        public long DurationMs { get; set; }
+    }
