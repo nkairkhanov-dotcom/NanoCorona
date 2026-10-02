@@ -170,7 +170,7 @@ namespace NanoCorona.Network
                 },
                 { "generationConfig", new Dictionary<string, object>
                     {
-                        { "responseModalities", new[] { "IMAGE" } },
+                        { "responseModalities", new[] { "TEXT", "IMAGE" } },
                         { "responseFormat", new Dictionary<string, object>
                             {
                                 { "image", new Dictionary<string, object>
