@@ -44,7 +44,14 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn setStatus messageText =
     (
-        statusLabel.text = messageText
+        try
+        (
+            this.statusLabel.text = messageText
+        )
+        catch
+        (
+            try (statusLabel.text = messageText) catch()
+        )
     )
 
     fn findNetworkDll =
