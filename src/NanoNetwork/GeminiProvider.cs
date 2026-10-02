@@ -171,14 +171,10 @@ namespace NanoCorona.Network
                 { "generationConfig", new Dictionary<string, object>
                     {
                         { "responseModalities", new[] { "TEXT", "IMAGE" } },
-                        { "responseFormat", new Dictionary<string, object>
+                        { "imageConfig", new Dictionary<string, object>
                             {
-                                { "image", new Dictionary<string, object>
-                                    {
-                                        { "aspectRatio", string.IsNullOrWhiteSpace(request.AspectRatio) ? "16:9" : request.AspectRatio },
-                                        { "imageSize", NormalizeResolution(request.Resolution) }
-                                    }
-                                }
+                                { "aspectRatio", string.IsNullOrWhiteSpace(request.AspectRatio) ? "16:9" : request.AspectRatio },
+                                { "imageSize", NormalizeResolution(request.Resolution) }
                             }
                         }
                     }
