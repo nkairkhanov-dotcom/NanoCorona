@@ -85,13 +85,16 @@ E Beauty + Depth + Normals + Architecture Mask
 
 ## Milestone 6 — Productization
 
-- [ ] UI polish
-- [ ] settings
-- [ ] installer
-- [ ] encrypted distribution where required
-- [ ] compatibility matrix
-- [ ] documentation
-- [ ] release build
+- [x] UI polish
+- [x] settings entry point / API key workflow
+- [x] source/result/A-B workflow
+- [x] installer script
+- [x] encrypted credential storage via Windows DPAPI
+- [x] compatibility matrix
+- [x] documentation
+- [x] release CI artifact packaging
+- [ ] live 3ds Max/Corona acceptance test
+- [ ] signed production installer/release binary
 
 
 ### Phase 4 implementation notes
