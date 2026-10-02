@@ -7,7 +7,7 @@
     Data milestone:
       Beauty + Z-Depth + Normals + Architecture Mask + Scene.json
 
-    Provider/network integration intentionally comes later.
+    Provider/network integration: NanoNetwork.dll async bridge.
 */
 
 global NanoCoronaVfbPrototype
