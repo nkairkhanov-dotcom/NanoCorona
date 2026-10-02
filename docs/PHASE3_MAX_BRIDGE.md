@@ -40,7 +40,7 @@ A MAXScript timer polls every 500 ms. UI updates happen only from the MAXScript 
 
 No 3ds Max API or rollout control is accessed from the network worker.
 
-Autodesk documents MAXScript timer controls as a way for a rollout to react to asynchronous conditions without user interaction. citeturn2search0
+Autodesk documents MAXScript timer controls as a way for a rollout to react to asynchronous conditions without user interaction.
 
 ## API key
 
@@ -60,9 +60,9 @@ The original Corona VFB render is not overwritten. Direct replacement/injection 
 
 ## Current provider
 
-The provider defaults to gemini-3-pro-image, which Google currently lists as the stable Nano Banana Pro model. Google documents image+text input and image output for this model. citeturn1search0turn1search10
+The provider defaults to gemini-3-pro-image, which Google currently lists as the stable Nano Banana Pro model. Google documents image+text input and image output for this model.
 
-The REST transport uses generateContent and x-goog-api-key. Google documents image output configuration with responseModalities / responseFormat, including 1K/2K/4K output and aspect ratios. citeturn0search0turn0search1
+The REST transport uses generateContent and x-goog-api-key. Google documents image output configuration with responseModalities / responseFormat, including 1K/2K/4K output and aspect ratios.
 
 ## Limitations
 
