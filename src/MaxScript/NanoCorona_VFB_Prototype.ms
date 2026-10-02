@@ -92,6 +92,23 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         )
     )
 
+    fn openSettings =
+    (
+        if not loadNetworkBridge() then return false
+        local key = getString caption:"Gemini API Key" prompt:"Enter Gemini API key (stored encrypted for this Windows user):"
+        if key != undefined and key != "" then
+        (
+            try
+            (
+                networkBridge.SaveGeminiApiKey key
+                apiStatusLabel.text = "API key: configured"
+                setStatus "Settings saved"
+                true
+            ) catch (false)
+        )
+        else false
+    )
+
     fn ensureApiKey =
     (
         if not loadNetworkBridge() then return false
