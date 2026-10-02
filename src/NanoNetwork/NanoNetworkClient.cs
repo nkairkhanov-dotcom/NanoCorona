@@ -30,9 +30,7 @@ namespace NanoCorona.Network
             string apiKey,
             CancellationToken cancellationToken)
         {
-            return Task.Run(
-                () => GenerateCoreAsync(request, apiKey, cancellationToken),
-                cancellationToken);
+            return GenerateCoreAsync(request, apiKey, cancellationToken);
         }
 
         private async Task<GenerationResult> GenerateCoreAsync(
