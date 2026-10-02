@@ -71,7 +71,8 @@ struct NanoCoronaRenderExtraction
 
     fn getCamera =
     (
-        local cam = undefined
+        local cam
+        cam = undefined
         try (cam = getActiveCamera()) catch()
         if cam == undefined do
         (
@@ -87,8 +88,10 @@ struct NanoCoronaRenderExtraction
 
     fn findElementByClass targetClass =
     (
-        local mgr = undefined
-        local el = undefined
+        local mgr
+        local el
+        mgr = undefined
+        el = undefined
         mgr = getElementManager()
         for i = 0 to (mgr.NumRenderElements() - 1) do
         (
@@ -100,8 +103,10 @@ struct NanoCoronaRenderExtraction
 
     fn findElementIndexByClass targetClass =
     (
-        local mgr = undefined
-        local el = undefined
+        local mgr
+        local el
+        mgr = undefined
+        el = undefined
         mgr = getElementManager()
         for i = 0 to (mgr.NumRenderElements() - 1) do
         (
@@ -114,8 +119,10 @@ struct NanoCoronaRenderExtraction
     fn addElementIfMissing elementClass elementName =
     (
         local existing = undefined
-        local mgr = undefined
-        local el = undefined
+        local mgr
+        local el
+        mgr = undefined
+        el = undefined
         existing = findElementByClass elementClass
         if existing != undefined then
         (
@@ -132,8 +139,10 @@ struct NanoCoronaRenderExtraction
 
     fn configureArchitectureMask =
     (
-        local selectedNodes = #()
-        local mask = undefined
+        local selectedNodes
+        local mask
+        selectedNodes = #()
+        mask = undefined
         selectedNodes = for n in selection where (isValidNode n and not n.isHidden) collect n
         if selectedNodes.count == 0 then
         (
@@ -176,10 +185,14 @@ struct NanoCoronaRenderExtraction
 
     fn setupPasses =
     (
-        local depth = undefined
-        local normals = undefined
-        local maskResult = undefined
-        local mgr = undefined
+        local depth
+        local normals
+        local maskResult
+        local mgr
+        depth = undefined
+        normals = undefined
+        maskResult = undefined
+        mgr = undefined
 
         if not isCoronaActive() then
         (
@@ -220,7 +233,8 @@ struct NanoCoronaRenderExtraction
 
     fn getChannelBitmap channelIndex =
     (
-        local bmp = undefined
+        local bmp
+        bmp = undefined
 
         if channelIndex != undefined do
         (
@@ -236,23 +250,41 @@ struct NanoCoronaRenderExtraction
 
     fn writeSceneJson rootDir beautyPath depthPath normalsPath maskPath =
     (
-        local cam = getCamera()
-        local camName = if cam != undefined then cam.name else ""
-        local projection = "perspective"
-        local cameraLocked = true
-        local width = renderWidth
-        local height = renderHeight
-        local aspect = 0.0
-        local architectureObjects = #()
-        local maskElement = undefined
-        local sceneObjects = #()
-        local objectJson = ""
-        local n = undefined
-        local architectureLocked = false
-        local cameraBlock = ""
-        local json = ""
-        local path = ""
-        local f = undefined
+        local cam
+        local camName
+        local projection
+        local cameraLocked
+        local width
+        local height
+        local aspect
+        local architectureObjects
+        local maskElement
+        local sceneObjects
+        local objectJson
+        local n
+        local architectureLocked
+        local cameraBlock
+        local json
+        local path
+        local f
+
+        cam = getCamera()
+        camName = if cam != undefined then cam.name else ""
+        projection = "perspective"
+        cameraLocked = true
+        width = renderWidth
+        height = renderHeight
+        aspect = 0.0
+        architectureObjects = #()
+        maskElement = undefined
+        sceneObjects = #()
+        objectJson = ""
+        n = undefined
+        architectureLocked = false
+        cameraBlock = ""
+        json = ""
+        path = ""
+        f = undefined
 
         if cam != undefined do
         (
@@ -369,22 +401,39 @@ struct NanoCoronaRenderExtraction
 
     fn extractCurrentVfb =
     (
-        local result = NanoCoronaExtractionResult()
-        local baseDir = ""
-        local root = ""
-        local beauty = undefined
-        local depthIndex = undefined
-        local normalsIndex = undefined
-        local maskIndex = undefined
-        local depthChannel = undefined
-        local normalsChannel = undefined
-        local maskChannel = undefined
-        local depthBmp = undefined
-        local normalsBmp = undefined
-        local maskBmp = undefined
-        local okDepth = false
-        local okNormals = false
-        local okMask = false
+        local result
+        local baseDir
+        local root
+        local beauty
+        local depthIndex
+        local normalsIndex
+        local maskIndex
+        local depthChannel
+        local normalsChannel
+        local maskChannel
+        local depthBmp
+        local normalsBmp
+        local maskBmp
+        local okDepth
+        local okNormals
+        local okMask
+
+        result = NanoCoronaExtractionResult()
+        baseDir = ""
+        root = ""
+        beauty = undefined
+        depthIndex = undefined
+        normalsIndex = undefined
+        maskIndex = undefined
+        depthChannel = undefined
+        normalsChannel = undefined
+        maskChannel = undefined
+        depthBmp = undefined
+        normalsBmp = undefined
+        maskBmp = undefined
+        okDepth = false
+        okNormals = false
+        okMask = false
 
         if not isCoronaActive() then
         (
