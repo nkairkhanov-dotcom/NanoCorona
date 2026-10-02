@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace NanoCorona.Network
 {
@@ -232,7 +233,7 @@ namespace NanoCorona.Network
 
         private static ProviderResponse ParseTextSuccess(string raw)
         {
-            var root = JsonConvert.DeserializeObject(raw) as Dictionary<string, object>;
+            var root = JsonConvert.DeserializeObject<Dictionary<string, object>>(raw);
             if (root == null) return Failure("INVALID_RESPONSE", "Gemini returned invalid JSON.", 200, raw);
             string text = null;
             var candidates = GetArray(root, "candidates");
@@ -354,13 +355,13 @@ namespace NanoCorona.Network
         private static Dictionary<string, object> GetObject(Dictionary<string, object> source, string key)
         {
             object value;
-            return source.TryGetValue(key, out value) ? value as Dictionary<string, object> : null;
+            return source.TryGetValue(key, out value) && value != null ? (value as JObject)?.ToObject<Dictionary<string, object>>() : null;
         }
 
         private static object[] GetArray(Dictionary<string, object> source, string key)
         {
             object value;
-            return source.TryGetValue(key, out value) ? value as object[] : null;
+            return source.TryGetValue(key, out value) && value != null ? (value as JArray)?.ToObject<object[]>() : null;
         }
 
         private static string GetString(Dictionary<string, object> source, string key)
