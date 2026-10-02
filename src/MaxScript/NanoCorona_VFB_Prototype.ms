@@ -37,6 +37,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     local networkBridge = undefined
     local networkDllPath = ""
     local currentJobId = ""
+    local qaJobId = ""
     local networkReady = false
     local compareMode = "Result"
     local selectedModel = "gemini-3-pro-image"
@@ -102,8 +103,9 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn openSettings =
     (
+        local key = undefined
         if not loadNetworkBridge() then return false
-        local key = getString caption:"Gemini API Key" prompt:"Enter Gemini API key (stored encrypted for this Windows user):"
+        key = getString caption:"Gemini API Key" prompt:"Enter Gemini API key (stored encrypted for this Windows user):"
         if key != undefined and key != "" then
         (
             try
@@ -119,6 +121,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn ensureApiKey =
     (
+        local key = undefined
         if not loadNetworkBridge() then return false
 
         try
@@ -127,7 +130,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         )
         catch()
 
-        local key = getString caption:"Gemini API Key" prompt:"Enter your Gemini API key:"
+        key = getString caption:"Gemini API Key" prompt:"Enter your Gemini API key:"
         if key == undefined or key == "" then
         (
             setStatus "Gemini API key is required"
@@ -218,6 +221,9 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn startNetworkGeneration =
     (
+        local outputDir = ""
+        local stamp = ""
+        local outputPath = ""
         if not loadNetworkBridge() then
         (
             messageBox "NanoNetwork.dll was not found. Build/copy NanoNetwork.dll before using Generate AI." title:"NanoCorona"
@@ -232,12 +238,12 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             return false
         )
 
-        local outputDir = getFilenamePath sceneJsonPath
-        local stamp = (localTime as string)
+        outputDir = getFilenamePath sceneJsonPath
+        stamp = (localTime as string)
         stamp = substituteString stamp ":" "_"
         stamp = substituteString stamp "/" "_"
         stamp = substituteString stamp " " "_"
-        local outputPath = outputDir + "\\nanocorona_result_" + stamp + ".png"
+        outputPath = outputDir + "\\nanocorona_result_" + stamp + ".png"
         buildEditJson outputDir
 
         try
@@ -282,12 +288,15 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn startCorrection =
     (
+        local outputDir = ""
+        local stamp = ""
+        local outputPath = ""
         if qaJobId == "" then return false
-        local outputDir = getFilenamePath sceneJsonPath
-        local stamp = substituteString ((localTime as string)) ":" "_"
+        outputDir = getFilenamePath sceneJsonPath
+        stamp = substituteString ((localTime as string)) ":" "_"
         stamp = substituteString stamp "/" "_"
         stamp = substituteString stamp " " "_"
-        local outputPath = outputDir + "\\nanocorona_correction_" + stamp + ".png"
+        outputPath = outputDir + "\\nanocorona_correction_" + stamp + ".png"
         try
         (
             currentJobId = networkBridge.StartCorrectionGeneration qaJobId sceneJsonPath resultPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath (getResolutionValue()) "gemini-3-pro-image" outputPath
@@ -305,6 +314,12 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn pollNetworkJob =
     (
+        local qaState = ""
+        local qp = 0
+        local state = ""
+        local p = 0
+        local code = ""
+        local message = ""
         if currentJobId == "" and qaJobId == "" or networkBridge == undefined then
         (
             jobTimer.active = false
@@ -315,8 +330,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         (
             if qaJobId != "" and currentJobId == "" then
             (
-                local qaState = networkBridge.GetJobState qaJobId
-                local qp = networkBridge.GetJobProgress qaJobId
+                qaState = networkBridge.GetJobState qaJobId
+                qp = networkBridge.GetJobProgress qaJobId
                 progress.value = qp
                 if qaState == "Analyzing" then setStatus "Vision QA: checking architecture..."
                 else if qaState == "Succeeded" then
@@ -345,8 +360,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 return()
             )
 
-            local state = networkBridge.GetJobState currentJobId
-            local p = networkBridge.GetJobProgress currentJobId
+            state = networkBridge.GetJobState currentJobId
+            p = networkBridge.GetJobProgress currentJobId
             progress.value = p
 
             if state == "Queued" or state == "Preparing" then
@@ -383,8 +398,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             else if state == "Failed" then
             (
                 jobTimer.active = false
-                local code = networkBridge.GetJobErrorCode currentJobId
-                local message = networkBridge.GetJobErrorMessage currentJobId
+                code = networkBridge.GetJobErrorCode currentJobId
+                message = networkBridge.GetJobErrorMessage currentJobId
                 setStatus ("AI failed: " + code)
                 messageBox (message + "\n\nError: " + code) title:"NanoCorona"
                 generateButton.enabled = true
@@ -446,11 +461,12 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn previewBeauty beautyPath =
     (
+        local bmp = undefined
         if beautyPath == "" or not doesFileExist beautyPath then return false
 
         try
         (
-            local bmp = openBitmap beautyPath
+            bmp = openBitmap beautyPath
             if bmp != undefined then
             (
                 if lastResultBitmap != undefined do
@@ -472,6 +488,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn setupPasses =
     (
+        local r = undefined
         if NanoCoronaRenderExtraction == undefined then
         (
             messageBox "Render extraction module is not loaded." title:"NanoCorona"
@@ -479,7 +496,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             return false
         )
 
-        local r = NanoCoronaRenderExtraction.setupPasses()
+        r = NanoCoronaRenderExtraction.setupPasses()
 
         if r[1] then
         (
@@ -497,13 +514,14 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn extractPasses =
     (
+        local r = undefined
         if NanoCoronaRenderExtraction == undefined then
         (
             messageBox "Render extraction module is not loaded." title:"NanoCorona"
             return false
         )
 
-        local r = NanoCoronaRenderExtraction.extractCurrentVfb()
+        r = NanoCoronaRenderExtraction.extractCurrentVfb()
 
         if r.success then
         (
@@ -526,6 +544,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn generatePrototype =
     (
+        local ok = false
         if busy then return()
 
         busy = true
@@ -535,7 +554,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         setStatus "Extracting Corona inputs..."
         progress.value = 15
 
-        local ok = extractPasses()
+        ok = extractPasses()
 
         if ok then
         (
@@ -562,9 +581,10 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn showSource =
     (
+        local p = ""
         if sceneJsonPath != "" then
         (
-            local p = (getFilenamePath sceneJsonPath) + "\\beauty.png"
+            p = (getFilenamePath sceneJsonPath) + "\\beauty.png"
             if doesFileExist p then
             (
                 compareMode = "Source"
@@ -591,11 +611,12 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn showResult =
     (
+        local bmp = undefined
         if resultPath != "" and doesFileExist resultPath then
         (
             try
             (
-                local bmp = openBitmap resultPath
+                bmp = openBitmap resultPath
                 if bmp != undefined do display bmp caption:"NanoCorona Result"
             )
             catch
@@ -725,6 +746,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     on NanoCoronaVfbPrototype open do
     (
+        try (statusLabel.text = "Ready — select architecture, Setup Passes, then render.") catch()
         openCoronaVfb()
         if loadNetworkBridge() then
         (
@@ -749,4 +771,3 @@ createDialog NanoCoronaVfbPrototype 340 760 style:#(#style_titlebar, #style_sysm
 cui.RegisterDialogBar NanoCoronaVfbPrototype style:#(#cui_dock_right, #cui_floatable, #cui_handles)
 cui.DockDialogBar NanoCoronaVfbPrototype #cui_dock_right
 
-NanoCoronaVfbPrototype.statusLabel.text = "Ready — select architecture, Setup Passes, then render."
