@@ -399,9 +399,14 @@ struct NanoCoronaRenderExtraction
 
         try (beauty = CoronaRenderer.CoronaFp.getVfbContent 0 true false) catch()
 
+        if beauty == undefined do
+        (
+            try (beauty = getLastRenderedImage()) catch()
+        )
+
         if beauty == undefined then
         (
-            result.message = "No Beauty image is available in the Corona VFB. Render a frame first."
+            result.message = "No Corona Beauty render is available. Render a frame first and keep Corona as the active renderer."
             return result
         )
 
