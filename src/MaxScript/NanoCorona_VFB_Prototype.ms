@@ -714,14 +714,18 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     on captureButton pressed do
     (
         local ok = false
+        local bmp = undefined
+        local dir = ""
+        local p = ""
+
         try
         (
-            local bmp = CoronaRenderer.CoronaFp.getVfbContent 0 true false
+            bmp = CoronaRenderer.CoronaFp.getVfbContent 0 true false
             if bmp != undefined then
             (
-                local dir = (getDir #temp) + "\\NanoCorona\\Current"
+                dir = (getDir #temp) + "\\NanoCorona\\Current"
                 if not doesFileExist dir do makeDir dir
-                local p = dir + "\\beauty.png"
+                p = dir + "\\beauty.png"
                 bmp.filename = p
                 save bmp quiet:true
                 close bmp
