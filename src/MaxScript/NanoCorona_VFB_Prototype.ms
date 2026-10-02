@@ -11,19 +11,20 @@
 */
 
 global NanoCoronaVfbPrototype
+global NanoCoronaPrototypeDir
 
 try (cui.UnRegisterDialogBar NanoCoronaVfbPrototype) catch()
 try (destroyDialog NanoCoronaVfbPrototype) catch()
 
-local prototypeDir = getFilenamePath (getSourceFileName())
+NanoCoronaPrototypeDir = getFilenamePath (getSourceFileName())
 try
 (
     if NanoCoronaRenderExtraction == undefined do
-        fileIn (prototypeDir + "NanoCorona_RenderExtraction.ms")
+        fileIn (NanoCoronaPrototypeDir + "NanoCorona_RenderExtraction.ms")
 )
 catch
 (
-    try (fileIn (prototypeDir + "NanoCorona_RenderExtraction.ms")) catch()
+    try (fileIn (NanoCoronaPrototypeDir + "NanoCorona_RenderExtraction.ms")) catch()
 )
 
 rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
@@ -49,8 +50,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     fn findNetworkDll =
     (
         local candidates = #()
-        append candidates (prototypeDir + "..\\NanoNetwork\\bin\\Release\\NanoNetwork.dll")
-        append candidates (prototypeDir + "..\\NanoNetwork\\bin\\Debug\\NanoNetwork.dll")
+        append candidates (NanoCoronaPrototypeDir + "..\\NanoNetwork\\bin\\Release\\NanoNetwork.dll")
+        append candidates (NanoCoronaPrototypeDir + "..\\NanoNetwork\\bin\\Debug\\NanoNetwork.dll")
         append candidates ((getDir #userScripts) + "\\NanoCorona\\NanoNetwork.dll")
         append candidates ((getDir #plugcfg) + "\\NanoCorona\\NanoNetwork.dll")
         append candidates (getDir #temp + "\\NanoCorona\\NanoNetwork.dll")
@@ -142,7 +143,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     fn jsonEscape value =
     (
         local s = value as string
-        s = substituteString s "\\" "\\\\" 
+        s = substituteString s "\\" "\\\\"
         s = substituteString s "\"" "\\\""
         s = substituteString s "\r" ""
         s = substituteString s "\n" "\\n"
@@ -234,7 +235,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
         try
         (
-            currentJobId = networkBridge.StartGeneration                 sceneJsonPath                 resultPath                 (outputDir + "\\depth.png")                 (outputDir + "\\normals.png")                 (outputDir + "\\architecture_mask.png")                 editJsonPath                 promptEdit.text                 strengthSpinner.value                 (getResolutionValue())                 selectedModel                 outputPath                 ""
+            currentJobId = networkBridge.StartGeneration sceneJsonPath resultPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath promptEdit.text strengthSpinner.value (getResolutionValue()) selectedModel outputPath ""
 
             setStatus "Gemini generation started..."
             progress.value = 50
