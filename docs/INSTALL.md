@@ -1,12 +1,12 @@
-# NanoCorona — установка
+# NanoCorona — установка для 3ds Max 2026 + Corona 15
 
 ## Требования
 
 - Windows 10/11 x64.
-- Autodesk 3ds Max 2025/2026/2027 — целевые версии Phase 6; более старые версии не считаются runtime-tested.
-- Corona Renderer for 3ds Max.
+- Autodesk 3ds Max **2026**.
+- **Corona 15 for 3ds Max**.
 - Gemini API key с доступом к выбранной image-модели.
-- Для сборки из исходников: Visual Studio Build Tools / MSBuild с поддержкой .NET Framework 4.6.2.
+- Для сборки из исходников: **.NET 8 SDK**.
 
 Chaos сейчас указывает 3ds Max 2018+ и Windows 10+ как общие требования Corona, но NanoCorona пока не заявляет runtime compatibility со всеми этими версиями. См. compatibility matrix.
 
