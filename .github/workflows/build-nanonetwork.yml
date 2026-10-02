@@ -2,7 +2,7 @@ name: Build NanoNetwork
 
 on:
   push:
-    branches: [main, feature/csharp-nanonetwork]
+    branches: [main, phase6-max2026-corona15]
     paths:
       - "src/NanoNetwork/**"
       - ".github/workflows/build-nanonetwork.yml"
@@ -17,14 +17,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
 
-      - name: Build NanoNetwork
-        run: msbuild src/NanoNetwork/NanoNetwork.csproj /p:Configuration=Release /m
+      - name: Restore
+        run: dotnet restore src/NanoNetwork/NanoNetwork.csproj
+
+      - name: Build NanoNetwork for 3ds Max 2026
+        run: dotnet build src/NanoNetwork/NanoNetwork.csproj -c Release --no-restore
 
       - name: Upload NanoNetwork artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NanoCorona-NanoNetwork
-          path: src/NanoNetwork/bin/Release/NanoNetwork.dll
+          name: NanoCorona-NanoNetwork-net8
+          path: src/NanoNetwork/bin/Release/net8.0-windows/
