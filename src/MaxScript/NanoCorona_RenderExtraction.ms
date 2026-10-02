@@ -190,6 +190,8 @@ struct NanoCoronaRenderExtraction
         local corners = #()
         local p = undefined
         local depth = 0.0
+        local span = 0.0
+        local padding = 0.0
 
         if cam == undefined then return undefined
 
@@ -224,8 +226,8 @@ struct NanoCoronaRenderExtraction
 
         if not found then return undefined
 
-        local span = maxDepth - minDepth
-        local padding = amax (span * 0.05) 0.1
+        span = maxDepth - minDepth
+        padding = amax (span * 0.05) 0.1
         minDepth = amax 0.01 (minDepth - padding)
         maxDepth = maxDepth + padding
 
