@@ -327,7 +327,7 @@ namespace NanoCorona.Network
 
             try
             {
-                var root = JsonConvert.DeserializeObject(raw) as Dictionary<string, object>;
+                var root = JsonConvert.DeserializeObject<Dictionary<string, object>>(raw);
                 var error = root == null ? null : GetObject(root, "error");
                 if (error != null)
                 {
