@@ -399,6 +399,7 @@ struct NanoCoronaRenderExtraction
         local objectJson
         local n
         local architectureLocked
+        local zDepthRange
         local cameraBlock
         local json
         local path
@@ -417,6 +418,7 @@ struct NanoCoronaRenderExtraction
         objectJson = ""
         n = undefined
         architectureLocked = false
+        zDepthRange = calculateCameraDepthRange cam
         cameraBlock = ""
         json = ""
         path = ""
