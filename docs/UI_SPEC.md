@@ -66,7 +66,7 @@ The user should not have to open a browser, export an image, upload it, wait in 
 Generation starts and ends inside the Corona rendering workflow.
 
 ### 3. Progressive disclosure
-Default panel: Provider/model, Source, Edit preset, Prompt, Strength, Resolution, Generate.
+Default panel: Provider/model, Settings/API-key status, Source, Edit preset, Prompt, Strength, Model, Resolution, Generate.
 Advanced sections: Passes, Masks, Scene JSON, Edit JSON, QA, Research mode, provider diagnostics.
 
 ## Main controls
@@ -106,7 +106,7 @@ Logical 0.0–1.0 control. Provider adapters translate it to model-specific beha
 The UI must reflect provider capability instead of assuming all models support all resolutions.
 
 ## Result area
-Actions: Show Result, Compare Source / Result, A/B, Save, Send/keep in VFB history if supported, Re-edit, Run QA, Correct.
+Actions: SOURCE, RESULT, A/B, Save, Re-edit, Run QA, Correct. Direct native Corona VFB history insertion remains optional/unsupported unless a public API is available.
 Where direct insertion into native Corona VFB history is not supported by a public API, NanoCorona should use its own result history and offer Save/Load rather than relying on unsupported internal VFB APIs.
 
 ## Technical integration strategy
@@ -158,3 +158,7 @@ This prevents UI work from blocking the core render → AI pipeline.
 - protected architecture state is visible;
 - the same UI can work with different AI providers;
 - the UI degrades gracefully if direct VFB embedding is unavailable.
+
+## Phase 6 shipped workflow
+
+The prototype now exposes Settings/API-key status, model selection, Source/Result/A-B controls, generation progress, Vision QA and Correction Pass in the dockable panel. The installation workflow is documented in docs/INSTALL.md and the user workflow in docs/USER_GUIDE.md.

@@ -22,3 +22,9 @@ jobs:
 
       - name: Build NanoNetwork
         run: msbuild src/NanoNetwork/NanoNetwork.csproj /p:Configuration=Release /m
+
+      - name: Upload NanoNetwork artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NanoCorona-NanoNetwork
+          path: src/NanoNetwork/bin/Release/NanoNetwork.dll
