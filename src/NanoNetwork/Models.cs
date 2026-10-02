@@ -10,6 +10,7 @@ namespace NanoCorona.Network
         public string DepthPath { get; set; }
         public string NormalsPath { get; set; }
         public string ArchitectureMaskPath { get; set; }
+        public string EditJsonPath { get; set; }
         public string Prompt { get; set; }
         public double Strength { get; set; }
         public string Resolution { get; set; }

@@ -60,12 +60,12 @@ Beauty → AI → result выполняется из 3ds Max без ручног
 ## Milestone 4 — Controlled editing
 
 - [x] Scene.json
-- [ ] Edit.json
+- [x] Edit.json
 - [x] architecture mask
 - [ ] environment mask
-- [ ] operation presets
-- [ ] provider request builder
-- [ ] A/B benchmark
+- [x] operation presets — Photorealism, Change Sky, Weather, Materials, Wet Road
+- [x] provider request builder — Edit.json is validated and compiled into provider prompt
+- [ ] A/B benchmark — pending reproducible 3ds Max/Corona runtime experiments
 
 Обязательный benchmark:
 
@@ -92,3 +92,10 @@ E Beauty + Depth + Normals + Architecture Mask
 - [ ] compatibility matrix
 - [ ] documentation
 - [ ] release build
+
+
+### Phase 4 implementation notes
+
+The controlled-edit path now creates an Edit.json beside the extracted Scene.json before each generation. The MAXScript preset selector provides five presets: Photorealism, Change Sky, Weather, Materials, and Wet Road. Each preset produces one explicit operation plus global constraints. When Architecture locked is enabled, the plan records the architecture as protected and the C# provider request explicitly treats the architecture mask as authoritative. NanoNetworkClient validates Edit.json before sending the request and includes both the edit plan and Scene.json as provider-agnostic control context; the JSON is not assumed to be a native Gemini command language.
+
+Still pending: automatic environment-mask generation and the A/B benchmark (Beauty → Beauty+Depth → +Normals → +Architecture Mask). These require real Corona renders and should not be marked complete without runtime measurements.
