@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace NanoCorona.Network
 {
@@ -108,7 +109,7 @@ namespace NanoCorona.Network
         {
             Job job;
             if (!Jobs.TryGetValue(jobId, out job) || job.QaResult == null) return "";
-            return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(job.QaResult);
+            return JsonConvert.SerializeObject(job.QaResult);
         }
 
         public bool GetJobArchitecturePreserved(string jobId)
