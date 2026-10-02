@@ -61,32 +61,18 @@ function Install-DotNet8Sdk {
 }
 
 $dotnet = Find-DotNet
-$hasNet8Sdk = $false
 
-if ($dotnet) {
-    & $dotnet --list-sdks 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        $sdkList = & $dotnet --list-sdks 2>$null
-        if ($sdkList -match '^8\\.') {
-            $hasNet8Sdk = $true
-        }
-    }
-}
-
-# A .NET runtime may provide dotnet.exe without providing the SDK.
-# NanoCorona needs the .NET 8 SDK to build NanoNetwork.
-if (!$hasNet8Sdk -and !$SkipDotNetInstall) {
+if (!$dotnet -and !$SkipDotNetInstall) {
     $dotnet = Install-DotNet8Sdk
-    $hasNet8Sdk = $true
 }
 
-if (!$dotnet -or !$hasNet8Sdk) {
-    throw "A .NET 8 SDK is required. Install .NET 8 SDK or run without -SkipDotNetInstall."
+if (!$dotnet) {
+    throw "dotnet.exe was not found. Install the .NET 8 SDK."
 }
 
-Write-Host "Using .NET SDK:" -ForegroundColor Green
+Write-Host "Using dotnet:" -ForegroundColor Green
 & $dotnet --version
-if ($LASTEXITCODE -ne 0) { throw "The .NET 8 SDK could not be executed." }
+if ($LASTEXITCODE -ne 0) { throw "dotnet.exe could not be executed." }
 
 Write-Host ""
 Write-Host "Restoring NanoNetwork dependencies..." -ForegroundColor Cyan
