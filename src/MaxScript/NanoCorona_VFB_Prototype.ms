@@ -266,6 +266,11 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn startVisionQa =
     (
+        if networkBridge == undefined and not loadNetworkBridge() then
+        (
+            setStatus "NanoNetwork.dll is not loaded"
+            return false
+        )
         if resultPath == "" or editJsonPath == "" or sceneJsonPath == "" then
         (
             setStatus "QA inputs are missing"
@@ -320,6 +325,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         local p = 0
         local code = ""
         local message = ""
+        local qaPassed = false
+        local qaSummary = ""
         if currentJobId == "" and qaJobId == "" or networkBridge == undefined then
         (
             jobTimer.active = false
@@ -337,8 +344,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 else if qaState == "Succeeded" then
                 (
                     jobTimer.active = false
-                    local qaPassed = networkBridge.GetJobQaPassed qaJobId
-                    local qaSummary = networkBridge.GetJobQaSummary qaJobId
+                    qaPassed = networkBridge.GetJobQaPassed qaJobId
+                    qaSummary = networkBridge.GetJobQaSummary qaJobId
                     if qaPassed then
                         setStatus "QA passed • architecture preserved"
                     else
@@ -394,6 +401,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 cancelButton.enabled = false
                 busy = false
                 qaButton.enabled = true
+                currentJobId = ""
             )
             else if state == "Failed" then
             (
@@ -407,6 +415,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 extractPassesButton.enabled = true
                 cancelButton.enabled = false
                 busy = false
+                currentJobId = ""
             )
             else if state == "Canceled" then
             (
@@ -418,6 +427,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 extractPassesButton.enabled = true
                 cancelButton.enabled = false
                 busy = false
+                currentJobId = ""
             )
         )
         catch
