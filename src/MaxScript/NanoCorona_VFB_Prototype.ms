@@ -75,12 +75,12 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     (
         if networkReady and networkBridge != undefined then return true
 
-        local dll = findNetworkDll()
+        local dll = this.findNetworkDll()
 
         if dll == undefined then
         (
             networkDllPath = ""
-            setStatus "NanoNetwork.dll not found"
+            this.setStatus "NanoNetwork.dll not found"
             return false
         )
 
@@ -96,7 +96,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         (
             networkBridge = undefined
             networkReady = false
-            setStatus "Could not load NanoNetwork.dll"
+            this.setStatus "Could not load NanoNetwork.dll"
             false
         )
     )
@@ -104,7 +104,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     fn openSettings =
     (
         local key = undefined
-        if not loadNetworkBridge() then return false
+        if not this.loadNetworkBridge() then return false
         key = getString caption:"Gemini API Key" prompt:"Enter Gemini API key (stored encrypted for this Windows user):"
         if key != undefined and key != "" then
         (
@@ -112,7 +112,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             (
                 networkBridge.SaveGeminiApiKey key
                 apiStatusLabel.text = "API key: configured"
-                setStatus "Settings saved"
+                this.setStatus "Settings saved"
                 true
             ) catch (false)
         )
@@ -122,7 +122,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     fn ensureApiKey =
     (
         local key = undefined
-        if not loadNetworkBridge() then return false
+        if not this.loadNetworkBridge() then return false
 
         try
         (
@@ -133,19 +133,19 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         key = getString caption:"Gemini API Key" prompt:"Enter your Gemini API key:"
         if key == undefined or key == "" then
         (
-            setStatus "Gemini API key is required"
+            this.setStatus "Gemini API key is required"
             return false
         )
 
         try
         (
             networkBridge.SaveGeminiApiKey key
-            setStatus "Gemini API key saved"
+            this.setStatus "Gemini API key saved"
             true
         )
         catch
         (
-            setStatus "Could not save Gemini API key"
+            this.setStatus "Could not save Gemini API key"
             false
         )
     )
@@ -171,7 +171,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn getPresetInstruction =
     (
-        local p = getPresetName()
+        local p = this.getPresetName()
         if p == "Change Sky" then "Replace the sky and distant atmospheric background only; preserve the building silhouette, facade and camera composition."
         else if p == "Weather" then "Modify weather and atmosphere: clouds, haze, sunlight and ambient conditions. Keep architecture unchanged."
         else if p == "Materials" then "Improve architectural material appearance, physically plausible roughness, reflections and texture response. Do not alter material boundaries or geometry."
@@ -181,7 +181,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn buildEditJson packageDir =
     (
-        local p = getPresetName()
+        local p = this.getPresetName()
         local strength = strengthSpinner.value
         local protectedArchitecture = architectureLock.checked
         local constraints = #(
@@ -195,15 +195,15 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         local opAction = if p == "Change Sky" then "replace" else "modify"
         local target = if p == "Change Sky" then "sky" else if p == "Weather" then "environment" else if p == "Materials" then "architectural materials" else if p == "Wet Road" then "road and pavement" else "overall appearance"
         local mask = if p == "Change Sky" then "environment" else if p == "Wet Road" then "road" else "auto"
-        local op = "{\"action\":\"" + opAction + "\",\"target\":\"" + (jsonEscape target) + "\",\"instruction\":\"" + (jsonEscape (getPresetInstruction())) + "\",\"strength\":" + (strength as string) + ",\"protected\":" + (protectedArchitecture as string) + ",\"appearanceOnly\":true,\"mask\":\"" + mask + "\"}"
+        local op = "{\"action\":\"" + opAction + "\",\"target\":\"" + (this.jsonEscape target) + "\",\"instruction\":\"" + (this.jsonEscape (this.getPresetInstruction())) + "\",\"strength\":" + (strength as string) + ",\"protected\":" + (protectedArchitecture as string) + ",\"appearanceOnly\":true,\"mask\":\"" + mask + "\"}"
         local constraintJson = ""
         for i = 1 to constraints.count do
         (
             if i > 1 do constraintJson += ","
-            constraintJson += "\"" + (jsonEscape constraints[i]) + "\""
+            constraintJson += "\"" + (this.jsonEscape constraints[i]) + "\""
         )
 
-        local json = "{\"schemaVersion\":\"1.1\",\"preset\":\"" + (jsonEscape p) + "\",\"source\":\"NanoCorona MAXScript preset\",\"operations\":[" + op + "],\"globalConstraints\":[" + constraintJson + "]}"
+        local json = "{\"schemaVersion\":\"1.1\",\"preset\":\"" + (this.jsonEscape p) + "\",\"source\":\"NanoCorona MAXScript preset\",\"operations\":[" + op + "],\"globalConstraints\":[" + constraintJson + "]}"
         local path = packageDir + "\\Edit.json"
         local f = createFile path
         format "%" json to:f
@@ -224,17 +224,17 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         local outputDir = ""
         local stamp = ""
         local outputPath = ""
-        if not loadNetworkBridge() then
+        if not this.loadNetworkBridge() then
         (
             messageBox "NanoNetwork.dll was not found. Build/copy NanoNetwork.dll before using Generate AI." title:"NanoCorona"
             return false
         )
 
-        if not ensureApiKey() then return false
+        if not this.ensureApiKey() then return false
 
         if sceneJsonPath == "" or not doesFileExist sceneJsonPath then
         (
-            setStatus "Scene.json is missing"
+            this.setStatus "Scene.json is missing"
             return false
         )
 
@@ -244,13 +244,13 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         stamp = substituteString stamp "/" "_"
         stamp = substituteString stamp " " "_"
         outputPath = outputDir + "\\nanocorona_result_" + stamp + ".png"
-        buildEditJson outputDir
+        this.buildEditJson outputDir
 
         try
         (
-            currentJobId = networkBridge.StartGeneration sceneJsonPath resultPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath promptEdit.text strengthSpinner.value (getResolutionValue()) selectedModel outputPath ""
+            currentJobId = networkBridge.StartGeneration sceneJsonPath resultPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath promptEdit.text strengthSpinner.value (this.getResolutionValue()) selectedModel outputPath ""
 
-            setStatus "Gemini generation started..."
+            this.setStatus "Gemini generation started..."
             progress.value = 50
             jobTimer.active = true
             true
@@ -258,7 +258,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         catch
         (
             currentJobId = ""
-            setStatus "Could not start Gemini generation"
+            this.setStatus "Could not start Gemini generation"
             messageBox "Could not start the AI request. Check NanoNetwork.dll and the Gemini API key." title:"NanoCorona"
             false
         )
@@ -266,27 +266,27 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn startVisionQa =
     (
-        if networkBridge == undefined and not loadNetworkBridge() then
+        if networkBridge == undefined and not this.loadNetworkBridge() then
         (
-            setStatus "NanoNetwork.dll is not loaded"
+            this.setStatus "NanoNetwork.dll is not loaded"
             return false
         )
         if resultPath == "" or editJsonPath == "" or sceneJsonPath == "" then
         (
-            setStatus "QA inputs are missing"
+            this.setStatus "QA inputs are missing"
             return false
         )
         try
         (
             qaJobId = networkBridge.StartVisionQa sceneJsonPath (getFilenamePath sceneJsonPath + "beauty.png") resultPath (getFilenamePath sceneJsonPath + "architecture_mask.png") editJsonPath promptEdit.text
-            setStatus "Vision QA analyzing result..."
+            this.setStatus "Vision QA analyzing result..."
             progress.value = 20
             jobTimer.active = true
             true
         )
         catch
         (
-            setStatus "Could not start Vision QA"
+            this.setStatus "Could not start Vision QA"
             false
         )
     )
@@ -304,15 +304,15 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         outputPath = outputDir + "\\nanocorona_correction_" + stamp + ".png"
         try
         (
-            currentJobId = networkBridge.StartCorrectionGeneration qaJobId sceneJsonPath resultPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath (getResolutionValue()) "gemini-3-pro-image" outputPath
-            setStatus "Correction pass started..."
+            currentJobId = networkBridge.StartCorrectionGeneration qaJobId sceneJsonPath resultPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath (this.getResolutionValue()) "gemini-3-pro-image" outputPath
+            this.setStatus "Correction pass started..."
             progress.value = 20
             jobTimer.active = true
             true
         )
         catch
         (
-            setStatus "Correction pass unavailable"
+            this.setStatus "Correction pass unavailable"
             false
         )
     )
@@ -340,17 +340,17 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 qaState = networkBridge.GetJobState qaJobId
                 qp = networkBridge.GetJobProgress qaJobId
                 progress.value = qp
-                if qaState == "Analyzing" then setStatus "Vision QA: checking architecture..."
+                if qaState == "Analyzing" then this.setStatus "Vision QA: checking architecture..."
                 else if qaState == "Succeeded" then
                 (
                     jobTimer.active = false
                     qaPassed = networkBridge.GetJobQaPassed qaJobId
                     qaSummary = networkBridge.GetJobQaSummary qaJobId
                     if qaPassed then
-                        setStatus "QA passed • architecture preserved"
+                        this.setStatus "QA passed • architecture preserved"
                     else
                     (
-                        setStatus "QA found violations — correction available"
+                        this.setStatus "QA found violations — correction available"
                         messageBox (qaSummary + "\n\nUse Correction Pass to repair the result.") title:"NanoCorona Vision QA"
                         correctionButton.enabled = true
                     )
@@ -360,7 +360,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 else if qaState == "Failed" then
                 (
                     jobTimer.active = false
-                    setStatus "Vision QA failed"
+                    this.setStatus "Vision QA failed"
                     qaJobId = ""
                     return()
                 )
@@ -372,28 +372,28 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             progress.value = p
 
             if state == "Queued" or state == "Preparing" then
-                setStatus "Preparing AI request..."
+                this.setStatus "Preparing AI request..."
             else if state == "Uploading" then
-                setStatus "Uploading Corona passes..."
+                this.setStatus "Uploading Corona passes..."
             else if state == "Generating" then
-                setStatus "Gemini is generating..."
+                this.setStatus "Gemini is generating..."
             else if state == "Saving" then
-                setStatus "Saving result..."
+                this.setStatus "Saving result..."
             else if state == "Canceling" then
-                setStatus "Canceling..."
+                this.setStatus "Canceling..."
             else if state == "Succeeded" then
             (
                 jobTimer.active = false
                 resultPath = networkBridge.GetJobResultPath currentJobId
                 if resultPath != "" and doesFileExist resultPath then
                 (
-                    previewBeauty resultPath
-                    setStatus ("AI result ready • " + ((networkBridge.GetJobDurationMs currentJobId) as string) + " ms")
+                    this.previewBeauty resultPath
+                    this.setStatus ("AI result ready • " + ((networkBridge.GetJobDurationMs currentJobId) as string) + " ms")
                     qaButton.enabled = true
                 )
                 else
                 (
-                    setStatus "Generation succeeded but result file is missing"
+                    this.setStatus "Generation succeeded but result file is missing"
                 )
                 generateButton.enabled = true
                 setupPassesButton.enabled = true
@@ -408,7 +408,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 jobTimer.active = false
                 code = networkBridge.GetJobErrorCode currentJobId
                 message = networkBridge.GetJobErrorMessage currentJobId
-                setStatus ("AI failed: " + code)
+                this.setStatus ("AI failed: " + code)
                 messageBox (message + "\n\nError: " + code) title:"NanoCorona"
                 generateButton.enabled = true
                 setupPassesButton.enabled = true
@@ -421,7 +421,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             (
                 jobTimer.active = false
                 progress.value = 0
-                setStatus "AI generation canceled"
+                this.setStatus "AI generation canceled"
                 generateButton.enabled = true
                 setupPassesButton.enabled = true
                 extractPassesButton.enabled = true
@@ -433,7 +433,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         catch
         (
             jobTimer.active = false
-            setStatus "Could not poll AI job"
+            this.setStatus "Could not poll AI job"
             generateButton.enabled = true
             setupPassesButton.enabled = true
             extractPassesButton.enabled = true
@@ -449,7 +449,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             try
             (
                 networkBridge.CancelGeneration currentJobId
-                setStatus "Canceling AI generation..."
+                this.setStatus "Canceling AI generation..."
             )
             catch()
         )
@@ -460,12 +460,12 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         try
         (
             CoronaRenderer.CoronaFp.showVfb true
-            setStatus "Corona VFB: open"
+            this.setStatus "Corona VFB: open"
         )
         catch
         (
             messageBox "Corona VFB could not be opened. Make sure Corona is the active renderer." title:"NanoCorona"
-            setStatus "Corona VFB: unavailable"
+            this.setStatus "Corona VFB: unavailable"
         )
     )
 
@@ -502,7 +502,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         if NanoCoronaRenderExtraction == undefined then
         (
             messageBox "Render extraction module is not loaded." title:"NanoCorona"
-            setStatus "Extraction module unavailable"
+            this.setStatus "Extraction module unavailable"
             return false
         )
 
@@ -510,14 +510,14 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
         if r[1] then
         (
-            setStatus r[3]
+            this.setStatus r[3]
             messageBox (r[3] + "\n\nRender the frame again, then press Extract Passes.") title:"NanoCorona"
             true
         )
         else
         (
             messageBox r[3] title:"NanoCorona"
-            setStatus r[3]
+            this.setStatus r[3]
             false
         )
     )
@@ -540,14 +540,14 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             sceneLabel.text = ("Scene.json: " + sceneJsonPath)
             editLabel.text = "Edit.json: will be created on Generate"
             packageLabel.text = "Beauty + Depth + Normals + Architecture Mask"
-            previewBeauty r.beautyPath
-            setStatus "Passes + Scene.json ready"
+            this.previewBeauty r.beautyPath
+            this.setStatus "Passes + Scene.json ready"
             true
         )
         else
         (
             messageBox r.message title:"NanoCorona"
-            setStatus r.message
+            this.setStatus r.message
             false
         )
     )
@@ -561,15 +561,15 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         generateButton.enabled = false
         setupPassesButton.enabled = false
         extractPassesButton.enabled = false
-        setStatus "Extracting Corona inputs..."
+        this.setStatus "Extracting Corona inputs..."
         progress.value = 15
 
-        ok = extractPasses()
+        ok = this.extractPasses()
 
         if ok then
         (
             progress.value = 20
-            if not startNetworkGeneration() then
+            if not this.startNetworkGeneration() then
             (
                 generateButton.enabled = true
                 setupPassesButton.enabled = true
@@ -598,8 +598,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             if doesFileExist p then
             (
                 compareMode = "Source"
-                previewBeauty p
-                setStatus "Showing Corona source"
+                this.previewBeauty p
+                this.setStatus "Showing Corona source"
                 return true
             )
         )
@@ -610,11 +610,11 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     fn toggleAB =
     (
         if resultPath == "" or not doesFileExist resultPath then return false
-        if compareMode == "Result" then showSource() else
+        if compareMode == "Result" then this.showSource() else
         (
             compareMode = "Result"
-            previewBeauty resultPath
-            setStatus "Showing AI result"
+            this.previewBeauty resultPath
+            this.setStatus "Showing AI result"
         )
         true
     )
@@ -704,23 +704,23 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         label note4 "Preset + Prompt are compiled into Edit.json before Gemini." align:#left
     )
 
-    on openVfbButton pressed do openCoronaVfb()
-    on settingsButton pressed do openSettings()
+    on openVfbButton pressed do this.openCoronaVfb()
+    on settingsButton pressed do this.openSettings()
     on modelDrop selected i do selectedModel = if i == 1 then "gemini-3.1-flash-image" else "gemini-3-pro-image"
-    on setupPassesButton pressed do setupPasses()
-    on extractPassesButton pressed do extractPasses()
-    on generateButton pressed do generatePrototype()
+    on setupPassesButton pressed do this.setupPasses()
+    on extractPassesButton pressed do this.extractPasses()
+    on generateButton pressed do this.generatePrototype()
     on editPresetDrop selected i do
     (
-        local p = getPresetName()
+        local p = this.getPresetName()
         if p == "Photorealism" then promptEdit.text = "Improve photorealism, lighting and material response while preserving architecture and camera composition."
         else if p == "Change Sky" then promptEdit.text = "Change the sky and atmosphere while preserving the building, camera and facade exactly."
         else if p == "Weather" then promptEdit.text = "Change weather and atmosphere with realistic clouds, haze and sunlight; preserve architecture."
         else if p == "Materials" then promptEdit.text = "Improve architectural materials, reflections, roughness and texture realism without changing geometry."
         else if p == "Wet Road" then promptEdit.text = "Make the road and pavement wet with realistic reflections and puddles; preserve the building."
     )
-    on cancelButton pressed do cancelNetworkGeneration()
-    on jobTimer tick do pollNetworkJob()
+    on cancelButton pressed do this.cancelNetworkGeneration()
+    on jobTimer tick do this.pollNetworkJob()
     on captureButton pressed do
     (
         local ok = false
@@ -740,34 +740,34 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 save bmp quiet:true
                 close bmp
                 resultPath = p
-                previewBeauty p
-                setStatus "Beauty captured"
+                this.previewBeauty p
+                this.setStatus "Beauty captured"
                 ok = true
             )
         )
         catch()
 
-        if not ok do setStatus "No Beauty render"
+        if not ok do this.setStatus "No Beauty render"
     )
-    on showSourceButton pressed do showSource()
-    on showResultButton pressed do (compareMode = "Result"; showResult())
-    on abButton pressed do toggleAB()
-    on qaButton pressed do startVisionQa()
+    on showSourceButton pressed do this.showSource()
+    on showResultButton pressed do (compareMode = "Result"; this.showResult())
+    on abButton pressed do this.toggleAB()
+    on qaButton pressed do this.startVisionQa()
     on correctionButton pressed do
     (
-        if startCorrection() then correctionButton.enabled = false
+        if this.startCorrection() then correctionButton.enabled = false
     )
 
     on NanoCoronaVfbPrototype open do
     (
         try (statusLabel.text = "Ready — select architecture, Setup Passes, then render.") catch()
-        openCoronaVfb()
-        if loadNetworkBridge() then
+        this.openCoronaVfb()
+        if this.loadNetworkBridge() then
         (
             if networkBridge.HasGeminiApiKey() then
-                setStatus "Ready — Gemini API key configured."
+                this.setStatus "Ready — Gemini API key configured."
             else
-                setStatus "Ready — Gemini API key required on first Generate."
+                this.setStatus "Ready — Gemini API key required on first Generate."
         )
     )
 
@@ -784,4 +784,3 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 createDialog NanoCoronaVfbPrototype 340 760 style:#(#style_titlebar, #style_sysmenu, #style_resizing)
 cui.RegisterDialogBar NanoCoronaVfbPrototype style:#(#cui_dock_right, #cui_floatable, #cui_handles)
 cui.DockDialogBar NanoCoronaVfbPrototype #cui_dock_right
-
