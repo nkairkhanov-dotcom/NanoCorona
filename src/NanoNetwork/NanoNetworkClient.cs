@@ -162,7 +162,33 @@ namespace NanoCorona.Network
                 var width = GetDouble(render, "width");
                 var height = GetDouble(render, "height");
                 if (width > 0 && height > 0)
-                    return (width / height).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + ":1";
+                {
+                    var ratio = width / height;
+                    var candidates = new[]
+                    {
+                        new { Name = "1:1", Value = 1.0 },
+                        new { Name = "4:3", Value = 4.0 / 3.0 },
+                        new { Name = "3:2", Value = 3.0 / 2.0 },
+                        new { Name = "16:9", Value = 16.0 / 9.0 },
+                        new { Name = "21:9", Value = 21.0 / 9.0 },
+                        new { Name = "9:16", Value = 9.0 / 16.0 },
+                        new { Name = "3:4", Value = 3.0 / 4.0 }
+                    };
+
+                    var nearest = candidates[0];
+                    var distance = Math.Abs(ratio - nearest.Value);
+                    foreach (var candidate in candidates)
+                    {
+                        var candidateDistance = Math.Abs(ratio - candidate.Value);
+                        if (candidateDistance < distance)
+                        {
+                            nearest = candidate;
+                            distance = candidateDistance;
+                        }
+                    }
+
+                    return nearest.Name;
+                }
             }
             catch { }
 
