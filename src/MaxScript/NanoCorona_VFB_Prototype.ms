@@ -101,11 +101,86 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         )
     )
 
+    fn promptForApiKey promptText =
+    (
+        local form = undefined
+        local label = undefined
+        local textBox = undefined
+        local okButton = undefined
+        local cancelButton = undefined
+        local result = undefined
+        local forms = undefined
+
+        try
+        (
+            forms = dotNetClass "System.Windows.Forms.Application"
+            dotNet.loadAssembly "System.Windows.Forms"
+            dotNet.loadAssembly "System.Drawing"
+
+            form = dotNetObject "System.Windows.Forms.Form"
+            form.Text = "NanoCorona — Gemini API Key"
+            form.Width = 520
+            form.Height = 155
+            form.FormBorderStyle = (dotNetClass "System.Windows.Forms.FormBorderStyle").FixedDialog
+            form.StartPosition = (dotNetClass "System.Windows.Forms.FormStartPosition").CenterScreen
+            form.MinimizeBox = false
+            form.MaximizeBox = false
+            form.TopMost = true
+
+            label = dotNetObject "System.Windows.Forms.Label"
+            label.Text = promptText
+            label.Left = 12
+            label.Top = 12
+            label.Width = 480
+            label.Height = 24
+            form.Controls.Add label
+
+            textBox = dotNetObject "System.Windows.Forms.TextBox"
+            textBox.Left = 12
+            textBox.Top = 38
+            textBox.Width = 480
+            textBox.UseSystemPasswordChar = true
+            form.Controls.Add textBox
+
+            okButton = dotNetObject "System.Windows.Forms.Button"
+            okButton.Text = "Save"
+            okButton.Left = 322
+            okButton.Top = 72
+            okButton.Width = 80
+            okButton.DialogResult = (dotNetClass "System.Windows.Forms.DialogResult").OK
+            form.Controls.Add okButton
+
+            cancelButton = dotNetObject "System.Windows.Forms.Button"
+            cancelButton.Text = "Cancel"
+            cancelButton.Left = 412
+            cancelButton.Top = 72
+            cancelButton.Width = 80
+            cancelButton.DialogResult = (dotNetClass "System.Windows.Forms.DialogResult").Cancel
+            form.Controls.Add cancelButton
+
+            form.AcceptButton = okButton
+            form.CancelButton = cancelButton
+
+            if form.ShowDialog() == (dotNetClass "System.Windows.Forms.DialogResult").OK then
+                result = textBox.Text
+            else
+                result = undefined
+
+            try (form.Dispose()) catch()
+            result
+        )
+        catch
+        (
+            try (if form != undefined do form.Dispose()) catch()
+            undefined
+        )
+    )
+
     fn openSettings =
     (
         local key = undefined
         if not NanoCoronaVfbPrototype.loadNetworkBridge() then return false
-        key = getString caption:"Gemini API Key" prompt:"Enter Gemini API key (stored encrypted for this Windows user):"
+        key = NanoCoronaVfbPrototype.promptForApiKey "Enter Gemini API key (stored encrypted for this Windows user):"
         if key != undefined and key != "" then
         (
             try
@@ -130,7 +205,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         )
         catch()
 
-        key = getString caption:"Gemini API Key" prompt:"Enter your Gemini API key:"
+        key = NanoCoronaVfbPrototype.promptForApiKey "Enter your Gemini API key:"
         if key == undefined or key == "" then
         (
             NanoCoronaVfbPrototype.setStatus "Gemini API key is required"
