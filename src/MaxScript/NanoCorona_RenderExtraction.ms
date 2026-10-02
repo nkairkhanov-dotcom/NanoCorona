@@ -87,10 +87,12 @@ struct NanoCoronaRenderExtraction
 
     fn findElementByClass targetClass =
     (
-        local mgr = getElementManager()
+        local mgr = undefined
+        local el = undefined
+        mgr = getElementManager()
         for i = 0 to (mgr.NumRenderElements() - 1) do
         (
-            local el = mgr.GetRenderElement i
+            el = mgr.GetRenderElement i
             if (classOf el) == targetClass do return el
         )
         undefined
@@ -98,10 +100,12 @@ struct NanoCoronaRenderExtraction
 
     fn findElementIndexByClass targetClass =
     (
-        local mgr = getElementManager()
+        local mgr = undefined
+        local el = undefined
+        mgr = getElementManager()
         for i = 0 to (mgr.NumRenderElements() - 1) do
         (
-            local el = mgr.GetRenderElement i
+            el = mgr.GetRenderElement i
             if (classOf el) == targetClass do return i
         )
         undefined
@@ -109,7 +113,10 @@ struct NanoCoronaRenderExtraction
 
     fn addElementIfMissing elementClass elementName =
     (
-        local existing = findElementByClass elementClass
+        local existing = undefined
+        local mgr = undefined
+        local el = undefined
+        existing = findElementByClass elementClass
         if existing != undefined then
         (
             try (existing.elementName = elementName) catch()
@@ -117,21 +124,23 @@ struct NanoCoronaRenderExtraction
         )
         else
         (
-            local mgr = getElementManager()
-            local el = elementClass elementName:elementName
+            mgr = getElementManager()
+            el = elementClass elementName:elementName
             if mgr.AddRenderElement el then el else undefined
         )
     )
 
     fn configureArchitectureMask =
     (
-        local selectedNodes = for n in selection where (isValidNode n and not n.isHidden) collect n
+        local selectedNodes = #()
+        local mask = undefined
+        selectedNodes = for n in selection where (isValidNode n and not n.isHidden) collect n
         if selectedNodes.count == 0 then
         (
             return #(false, "Select the architectural/building objects first, then run Setup Passes.")
         )
 
-        local mask = findElementByClass CMasking_Mask
+        mask = findElementByClass CMasking_Mask
         if mask == undefined then
         (
             mask = addElementIfMissing CMasking_Mask "NanoCorona_ArchitectureMask"
@@ -246,7 +255,16 @@ struct NanoCoronaRenderExtraction
         local aspect = if height != 0 then (width as float / height) else 0.0
 
         local architectureObjects = #()
-        local maskElement = findElementByClass CMasking_Mask
+        local maskElement = undefined
+        local sceneObjects = #()
+        local objectJson = ""
+        local n = undefined
+        local architectureLocked = false
+        local cameraBlock = ""
+        local json = ""
+        local path = ""
+        local f = undefined
+        maskElement = findElementByClass CMasking_Mask
 
         if maskElement != undefined do
         (
@@ -260,13 +278,12 @@ struct NanoCoronaRenderExtraction
             catch()
         )
 
-        local sceneObjects = for n in geometry where (not n.isHidden and not n.isFrozen) collect n
-        local objectJson = ""
+        sceneObjects = for n in geometry where (not n.isHidden and not n.isFrozen) collect n
 
         for i = 1 to sceneObjects.count do
         (
-            local n = sceneObjects[i]
-            local architectureLocked = (findItem architectureObjects n.name) > 0
+            n = sceneObjects[i]
+            architectureLocked = (findItem architectureObjects n.name) > 0
 
             objectJson +=
             (
@@ -281,7 +298,7 @@ struct NanoCoronaRenderExtraction
             objectJson += "\n"
         )
 
-        local cameraBlock =
+        cameraBlock =
         (
             "{" +
             "\"name\":" + jsonString camName + "," +
@@ -293,7 +310,7 @@ struct NanoCoronaRenderExtraction
             "}"
         )
 
-        local json =
+        json =
         (
             "{\n" +
             "  \"schemaVersion\": \"1.1\",\n" +
@@ -342,8 +359,8 @@ struct NanoCoronaRenderExtraction
             "}\n"
         )
 
-        local path = rootDir + "\\Scene.json"
-        local f = createFile path
+        path = rootDir + "\\Scene.json"
+        f = createFile path
         if f == undefined then return undefined
         format "%" json to:f
         close f
