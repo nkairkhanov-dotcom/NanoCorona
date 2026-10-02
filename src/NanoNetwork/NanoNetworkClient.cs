@@ -125,7 +125,7 @@ namespace NanoCorona.Network
                     }
                 };
 
-                var response = await _provider.AnalyzeAsync(providerRequest, apiKey, cancellationToken).ConfigureAwait(false);
+                var response = await _provider.AnalyzeAsync(providerRequest, apiKey, _options, cancellationToken).ConfigureAwait(false);
                 if (!response.Success)
                     return new VisionQaResult { Success = false, ErrorCode = response.ErrorCode, ErrorMessage = response.ErrorMessage, RawText = response.Text, DurationMs = sw.ElapsedMilliseconds };
 
