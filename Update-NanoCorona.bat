@@ -15,6 +15,11 @@ set "REPO_URL=https://github.com/nkairkhanov-dotcom/NanoCorona.git"
 
 echo [1/4] Downloading latest NanoCorona from GitHub...
 if exist "%UPDATE_DIR%" rmdir /s /q "%UPDATE_DIR%"
+rem Find Git even when it was installed after this terminal was opened.
+if exist "%ProgramFiles%\Git\cmd\git.exe" set "PATH=%ProgramFiles%\Git\cmd;%PATH%"
+if exist "%ProgramFiles(x86)%\Git\cmd\git.exe" set "PATH=%ProgramFiles(x86)%\Git\cmd;%PATH%"
+if exist "%LOCALAPPDATA%\Programs\Git\cmd\git.exe" set "PATH=%LOCALAPPDATA%\Programs\Git\cmd;%PATH%"
+if exist "%USERPROFILE%\scoop\apps\git\current\cmd\git.exe" set "PATH=%USERPROFILE%\scoop\apps\git\current\cmd;%PATH%"
 where git.exe >nul 2>&1
 if not errorlevel 1 goto :git_ready
 echo Git was not found. Installing Git for Windows automatically...
@@ -23,6 +28,8 @@ if errorlevel 1 goto :no_winget
 winget.exe install --id Git.Git --scope user --silent --accept-package-agreements --accept-source-agreements
 if errorlevel 1 goto :error
 set "PATH=%LOCALAPPDATA%\Programs\Git\cmd;%ProgramFiles%\Git\cmd;%PATH%"
+if exist "%ProgramFiles%\Git\cmd\git.exe" set "PATH=%ProgramFiles%\Git\cmd;%PATH%"
+if exist "%LOCALAPPDATA%\Programs\Git\cmd\git.exe" set "PATH=%LOCALAPPDATA%\Programs\Git\cmd;%PATH%"
 where git.exe >nul 2>&1
 if errorlevel 1 goto :git_not_found
 :git_ready
