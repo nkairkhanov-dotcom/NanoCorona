@@ -69,7 +69,7 @@ namespace NanoCorona.Network
         public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(5);
         public int MaxRetries { get; set; } = 2;
         public string GeminiEndpoint { get; set; } =
-            "https://generativelanguage.googleapis.com/v1beta/models/{0}:generateContent";
+            "https://generativelanguage.googleapis.com/v1/models/{0}:generateContent";
     }
 
     public sealed class NanoNetworkException : Exception
