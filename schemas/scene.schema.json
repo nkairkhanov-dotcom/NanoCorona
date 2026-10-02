@@ -39,9 +39,7 @@
             }
           },
           "additionalProperties": true
-        }
-      },
-      "properties": {
+        },
         "passes": {
           "type": "object",
           "properties": {
