@@ -73,9 +73,11 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     fn loadNetworkBridge =
     (
+        local dll = undefined
+
         if networkReady and networkBridge != undefined then return true
 
-        local dll = NanoCoronaVfbPrototype.findNetworkDll()
+        dll = NanoCoronaVfbPrototype.findNetworkDll()
 
         if dll == undefined then
         (
@@ -265,22 +267,30 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             "Do not add, remove or relocate structural building elements.",
             "Keep the edit appearance-focused unless an operation explicitly targets an editable environment region."
         )
+        local opAction = ""
+        local target = ""
+        local mask = ""
+        local op = ""
+        local constraintJson = ""
+        local json = ""
+        local path = ""
+        local f = undefined
+
         if protectedArchitecture do append constraints "Architecture is protected by architecture_mask.png and must remain unchanged."
 
-        local opAction = if p == "Change Sky" then "replace" else "modify"
-        local target = if p == "Change Sky" then "sky" else if p == "Weather" then "environment" else if p == "Materials" then "architectural materials" else if p == "Wet Road" then "road and pavement" else "overall appearance"
-        local mask = if p == "Change Sky" then "environment" else if p == "Wet Road" then "road" else "auto"
-        local op = "{\"action\":\"" + opAction + "\",\"target\":\"" + (NanoCoronaVfbPrototype.jsonEscape target) + "\",\"instruction\":\"" + (NanoCoronaVfbPrototype.jsonEscape (NanoCoronaVfbPrototype.getPresetInstruction())) + "\",\"strength\":" + (strength as string) + ",\"protected\":" + (protectedArchitecture as string) + ",\"appearanceOnly\":true,\"mask\":\"" + mask + "\"}"
-        local constraintJson = ""
+        opAction = if p == "Change Sky" then "replace" else "modify"
+        target = if p == "Change Sky" then "sky" else if p == "Weather" then "environment" else if p == "Materials" then "architectural materials" else if p == "Wet Road" then "road and pavement" else "overall appearance"
+        mask = if p == "Change Sky" then "environment" else if p == "Wet Road" then "road" else "auto"
+        op = "{\"action\":\"" + opAction + "\",\"target\":\"" + (NanoCoronaVfbPrototype.jsonEscape target) + "\",\"instruction\":\"" + (NanoCoronaVfbPrototype.jsonEscape (NanoCoronaVfbPrototype.getPresetInstruction())) + "\",\"strength\":" + (strength as string) + ",\"protected\":" + (protectedArchitecture as string) + ",\"appearanceOnly\":true,\"mask\":\"" + mask + "\"}"
         for i = 1 to constraints.count do
         (
             if i > 1 do constraintJson += ","
             constraintJson += "\"" + (NanoCoronaVfbPrototype.jsonEscape constraints[i]) + "\""
         )
 
-        local json = "{\"schemaVersion\":\"1.1\",\"preset\":\"" + (NanoCoronaVfbPrototype.jsonEscape p) + "\",\"source\":\"NanoCorona MAXScript preset\",\"operations\":[" + op + "],\"globalConstraints\":[" + constraintJson + "]}"
-        local path = packageDir + "\\Edit.json"
-        local f = createFile path
+        json = "{\"schemaVersion\":\"1.1\",\"preset\":\"" + (NanoCoronaVfbPrototype.jsonEscape p) + "\",\"source\":\"NanoCorona MAXScript preset\",\"operations\":[" + op + "],\"globalConstraints\":[" + constraintJson + "]}"
+        path = packageDir + "\\Edit.json"
+        f = createFile path
         format "%" json to:f
         close f
         editJsonPath = path
