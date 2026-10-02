@@ -240,20 +240,9 @@ struct NanoCoronaRenderExtraction
         local camName = if cam != undefined then cam.name else ""
         local projection = "perspective"
         local cameraLocked = true
-
-        if cam != undefined do
-        (
-            try
-            (
-                if cam.orthoProjection then projection = "orthographic"
-            )
-            catch()
-        )
-
         local width = renderWidth
         local height = renderHeight
-        local aspect = if height != 0 then (width as float / height) else 0.0
-
+        local aspect = 0.0
         local architectureObjects = #()
         local maskElement = undefined
         local sceneObjects = #()
@@ -264,6 +253,17 @@ struct NanoCoronaRenderExtraction
         local json = ""
         local path = ""
         local f = undefined
+
+        if cam != undefined do
+        (
+            try
+            (
+                if cam.orthoProjection then projection = "orthographic"
+            )
+            catch()
+        )
+
+        aspect = if height != 0 then (width as float / height) else 0.0
         maskElement = findElementByClass CMasking_Mask
 
         if maskElement != undefined do
