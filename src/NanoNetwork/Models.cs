@@ -37,6 +37,7 @@ namespace NanoCorona.Network
         public string Model { get; set; }
         public string Prompt { get; set; }
         public string Resolution { get; set; }
+        public string AspectRatio { get; set; }
         public double Strength { get; set; }
         public IList<ProviderImagePart> Images { get; set; }
     }
