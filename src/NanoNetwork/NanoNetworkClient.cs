@@ -172,7 +172,7 @@ namespace NanoCorona.Network
                 var start = json.IndexOf('{');
                 var end = json.LastIndexOf('}');
                 if (start >= 0 && end > start) json = json.Substring(start, end - start + 1);
-                var root = JsonConvert.DeserializeObject(json) as Dictionary<string, object>;
+                var root = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
                 if (root == null) throw new NanoNetworkException("Vision QA returned invalid JSON.", "QA_INVALID");
                 return new VisionQaResult
                 {
