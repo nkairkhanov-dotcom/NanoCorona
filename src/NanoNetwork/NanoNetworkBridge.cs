@@ -16,6 +16,7 @@ namespace NanoCorona.Network
             public string ErrorCode;
             public string ErrorMessage;
             public long DurationMs;
+            public VisionQaResult QaResult;
         }
 
         private static readonly ConcurrentDictionary<string, Job> Jobs =
@@ -48,6 +49,108 @@ namespace NanoCorona.Network
         public void DeleteGeminiApiKey()
         {
             CredentialStore.Delete();
+        }
+
+        public string StartVisionQa(
+            string sceneJsonPath,
+            string sourceBeautyPath,
+            string resultPath,
+            string architectureMaskPath,
+            string editJsonPath,
+            string prompt)
+        {
+            var apiKey = CredentialStore.LoadGeminiApiKey();
+            if (string.IsNullOrWhiteSpace(apiKey))
+                throw new NanoNetworkException("Gemini API key is not configured.", "AUTH_MISSING");
+
+            var jobId = Guid.NewGuid().ToString("N");
+            var job = new Job();
+            Jobs[jobId] = job;
+            Task.Run(async () =>
+            {
+                try
+                {
+                    job.State = "Analyzing";
+                    job.Progress = 20;
+                    var result = await _client.AnalyzeVisionQaAsync(new VisionQaRequest
+                    {
+                        SceneJsonPath = sceneJsonPath,
+                        SourceBeautyPath = sourceBeautyPath,
+                        ResultPath = resultPath,
+                        ArchitectureMaskPath = architectureMaskPath,
+                        EditJsonPath = editJsonPath,
+                        Prompt = prompt
+                    }, apiKey, job.Cancellation.Token).ConfigureAwait(false);
+                    job.QaResult = result;
+                    job.Progress = 100;
+                    job.State = result.Success ? "Succeeded" : "Failed";
+                    job.ErrorCode = result.ErrorCode;
+                    job.ErrorMessage = result.ErrorMessage;
+                    job.DurationMs = result.DurationMs;
+                }
+                catch (OperationCanceledException)
+                {
+                    job.State = "Canceled";
+                    job.ErrorCode = "CANCELED";
+                    job.ErrorMessage = "Vision QA was canceled.";
+                }
+                catch (Exception ex)
+                {
+                    job.State = "Failed";
+                    job.ErrorCode = "QA_ERROR";
+                    job.ErrorMessage = ex.Message;
+                }
+            });
+            return jobId;
+        }
+
+        public string GetJobQaSummary(string jobId)
+        {
+            Job job;
+            if (!Jobs.TryGetValue(jobId, out job) || job.QaResult == null) return "";
+            return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(job.QaResult);
+        }
+
+        public bool GetJobArchitecturePreserved(string jobId)
+        {
+            Job job;
+            return Jobs.TryGetValue(jobId, out job) && job.QaResult != null && job.QaResult.ArchitecturePreserved;
+        }
+
+        public bool GetJobQaPassed(string jobId)
+        {
+            Job job;
+            return Jobs.TryGetValue(jobId, out job) && job.QaResult != null &&
+                job.QaResult.Success && job.QaResult.ArchitecturePreserved &&
+                job.QaResult.CameraPreserved && job.QaResult.CompositionPreserved &&
+                job.QaResult.EditSatisfied && job.QaResult.Severity != "high";
+        }
+
+        public string StartCorrectionGeneration(
+            string qaJobId,
+            string sceneJsonPath,
+            string beautyPath,
+            string depthPath,
+            string normalsPath,
+            string architectureMaskPath,
+            string editJsonPath,
+            string resolution,
+            string model,
+            string outputPath)
+        {
+            Job qaJob;
+            if (!Jobs.TryGetValue(qaJobId, out qaJob) || qaJob.QaResult == null)
+                throw new NanoNetworkException("Vision QA result is unavailable.", "QA_MISSING");
+            if (qaJob.QaResult.ArchitecturePreserved && qaJob.QaResult.EditSatisfied &&
+                qaJob.QaResult.CameraPreserved && qaJob.QaResult.CompositionPreserved)
+                throw new NanoNetworkException("Correction pass is not required.", "QA_NO_CORRECTION");
+
+            var violations = qaJob.QaResult.Violations == null ? "" : string.Join("; ", qaJob.QaResult.Violations);
+            var correctionPrompt = "Correction pass. Preserve the original Corona architecture, camera and composition. " +
+                "Fix only the QA violations listed below. Do not introduce new changes. " +
+                "QA severity: " + qaJob.QaResult.Severity + ". Violations: " + violations;
+            return StartGeneration(sceneJsonPath, beautyPath, depthPath, normalsPath, architectureMaskPath,
+                editJsonPath, correctionPrompt, 0.35, resolution, model, outputPath, "");
         }
 
         public string StartGeneration(
