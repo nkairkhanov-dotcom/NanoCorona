@@ -146,11 +146,11 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         stamp = substituteString stamp ":" "_"
         stamp = substituteString stamp "/" "_"
         stamp = substituteString stamp " " "_"
-        local outputPath = outputDir + "\nanocorona_result_" + stamp + ".png"
+        local outputPath = outputDir + "\\nanocorona_result_" + stamp + ".png"
 
         try
         (
-            currentJobId = networkBridge.StartGeneration                 sceneJsonPath                 resultPath                 (outputDir + "\depth.png")                 (outputDir + "\normals.png")                 (outputDir + "\architecture_mask.png")                 promptEdit.text                 strengthSpinner.value                 (getResolutionValue())                 "gemini-3-pro-image"                 outputPath                 ""
+            currentJobId = networkBridge.StartGeneration                 sceneJsonPath                 resultPath                 (outputDir + "\\depth.png")                 (outputDir + "\\normals.png")                 (outputDir + "\\architecture_mask.png")                 promptEdit.text                 strengthSpinner.value                 (getResolutionValue())                 "gemini-3-pro-image"                 outputPath                 ""
 
             setStatus "Gemini generation started..."
             progress.value = 50
