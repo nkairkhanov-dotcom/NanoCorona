@@ -267,7 +267,7 @@ namespace NanoCorona.Network
         {
             try
             {
-                var root = JsonConvert.DeserializeObject(sceneJson) as Dictionary<string, object>;
+                var root = JsonConvert.DeserializeObject<Dictionary<string, object>>(sceneJson);
                 var scene = root == null ? null : GetObject(root, "scene");
                 var render = scene == null ? null : GetObject(scene, "render");
                 var width = GetDouble(render, "width");
@@ -413,7 +413,7 @@ namespace NanoCorona.Network
 
             try
             {
-                var root = JsonConvert.DeserializeObject(json) as Dictionary<string, object>;
+                var root = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
                 if (root == null || !root.ContainsKey("operations"))
                     throw new NanoNetworkException("Edit.json has no operations array.", "EDIT_INVALID");
                 return json;
