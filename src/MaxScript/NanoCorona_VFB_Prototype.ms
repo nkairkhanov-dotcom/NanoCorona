@@ -37,6 +37,9 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     local networkDllPath = ""
     local currentJobId = ""
     local networkReady = false
+    local compareMode = "Result"
+    local selectedModel = "gemini-3-pro-image"
+    local apiKeyConfigured = false
 
     fn setStatus messageText =
     (
@@ -214,7 +217,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
         try
         (
-            currentJobId = networkBridge.StartGeneration                 sceneJsonPath                 resultPath                 (outputDir + "\\depth.png")                 (outputDir + "\\normals.png")                 (outputDir + "\\architecture_mask.png")                 editJsonPath                 promptEdit.text                 strengthSpinner.value                 (getResolutionValue())                 "gemini-3-pro-image"                 outputPath                 ""
+            currentJobId = networkBridge.StartGeneration                 sceneJsonPath                 resultPath                 (outputDir + "\\depth.png")                 (outputDir + "\\normals.png")                 (outputDir + "\\architecture_mask.png")                 editJsonPath                 promptEdit.text                 strengthSpinner.value                 (getResolutionValue())                 selectedModel                 outputPath                 ""
 
             setStatus "Gemini generation started..."
             progress.value = 50
@@ -532,6 +535,35 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         )
     )
 
+    fn showSource =
+    (
+        if sceneJsonPath != "" then
+        (
+            local p = (getFilenamePath sceneJsonPath) + "\\beauty.png"
+            if doesFileExist p then
+            (
+                compareMode = "Source"
+                previewBeauty p
+                setStatus "Showing Corona source"
+                return true
+            )
+        )
+        messageBox "Corona source Beauty is not available. Extract passes first." title:"NanoCorona"
+        false
+    )
+
+    fn toggleAB =
+    (
+        if resultPath == "" or not doesFileExist resultPath then return false
+        if compareMode == "Result" then showSource() else
+        (
+            compareMode = "Result"
+            previewBeauty resultPath
+            setStatus "Showing AI result"
+        )
+        true
+    )
+
     fn showResult =
     (
         if resultPath != "" and doesFileExist resultPath then
@@ -553,13 +585,15 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     )
 
     group "NanoCorona" (
-        label headerLabel "AI image editing for Corona VFB" align:#left
-        label providerLabel "Provider: Gemini • Nano Banana Pro" align:#left
+        label headerLabel "NanoCorona • AI image editing for Corona" align:#left
+        label providerLabel "Gemini • Nano Banana Pro" align:#left
+        label apiStatusLabel "API key: checking..." align:#left
+        button settingsButton "Settings" width:145 across:2
+        button openVfbButton "Open / Focus Corona VFB" width:145
     )
 
     group "Source" (
         dropdownlist sourceDrop "Source:" items:#("Beauty (Corona VFB)", "Z-Depth", "Normals", "Mask") selection:1 width:300
-        button openVfbButton "Open / Focus Corona VFB" width:300
         button setupPassesButton "Setup Depth / Normals / Architecture Mask" width:300
         button extractPassesButton "Extract Passes + Scene.json" width:300
     )
@@ -576,6 +610,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     group "Controls" (
         spinner strengthSpinner "Strength:" range:[0.1,1.0,0.65] type:#float scale:0.05 fieldWidth:65 across:2
         dropdownlist resolutionDrop "Resolution:" items:#("1K", "2K", "4K") selection:2 width:90
+        dropdownlist modelDrop "Model:" items:#("Nano Banana 2", "Nano Banana Pro") selection:2 width:140
         checkbox architectureLock "Architecture locked" checked:true across:2
         label strengthHint "0.1 = subtle   1.0 = strong" align:#left
     )
@@ -592,7 +627,9 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     group "Result" (
         imgTag resultPreview "" width:300 height:170 style:#bmp_stretch
         label resultPathLabel "No result yet." width:300 align:#left
-        button showResultButton "Show Result" width:145 across:2
+        button showSourceButton "SOURCE" width:95
+        button showResultButton "RESULT" width:95
+        button abButton "A / B" width:95
         button qaButton "VISION QA" width:145 enabled:false
         button correctionButton "CORRECTION PASS" width:145 enabled:false
         button captureButton "Capture VFB" width:145
@@ -612,6 +649,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     )
 
     on openVfbButton pressed do openCoronaVfb()
+    on settingsButton pressed do openSettings()
+    on modelDrop selected i do selectedModel = if i == 1 then "gemini-3.1-flash-image" else "gemini-3-pro-image"
     on setupPassesButton pressed do setupPasses()
     on extractPassesButton pressed do extractPasses()
     on generateButton pressed do generatePrototype()
@@ -650,7 +689,9 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
         if not ok do setStatus "No Beauty render"
     )
-    on showResultButton pressed do showResult()
+    on showSourceButton pressed do showSource()
+    on showResultButton pressed do (compareMode = "Result"; showResult())
+    on abButton pressed do toggleAB()
     on qaButton pressed do startVisionQa()
     on correctionButton pressed do
     (
@@ -683,4 +724,4 @@ createDialog NanoCoronaVfbPrototype 340 760 style:#(#style_titlebar, #style_sysm
 cui.RegisterDialogBar NanoCoronaVfbPrototype style:#(#cui_dock_right, #cui_floatable, #cui_handles)
 cui.DockDialogBar NanoCoronaVfbPrototype #cui_dock_right
 
-setStatus "Ready — select architecture, Setup Passes, then render."
+NanoCoronaVfbPrototype.statusLabel.text = "Ready — select architecture, Setup Passes, then render."
