@@ -11,24 +11,18 @@ echo ==============================================
 echo.
 
 set "UPDATE_DIR=%TEMP%\NanoCorona-update"
-set "ZIP_FILE=%TEMP%\NanoCorona-main.zip"
-set "REPO_URL=https://github.com/nkairkhanov-dotcom/NanoCorona/archive/refs/heads/main.zip"
+set "REPO_URL=https://github.com/nkairkhanov-dotcom/NanoCorona.git"
 
 echo [1/4] Downloading latest NanoCorona from GitHub...
-if exist "%ZIP_FILE%" del /q "%ZIP_FILE%"
-where curl.exe >nul 2>&1
-if errorlevel 1 goto :no_curl
-curl.exe -L --fail --silent --show-error --output "%ZIP_FILE%" "%REPO_URL%"
-if errorlevel 1 goto :error
-if not exist "%ZIP_FILE%" goto :error
-
-echo [2/4] Extracting update...
 if exist "%UPDATE_DIR%" rmdir /s /q "%UPDATE_DIR%"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path '%ZIP_FILE%' -DestinationPath '%UPDATE_DIR%' -Force"
+where git.exe >nul 2>&1
+if errorlevel 1 goto :no_git
+git.exe clone --depth 1 --branch main "%REPO_URL%" "%UPDATE_DIR%"
 if errorlevel 1 goto :error
-
-set "REPO_ROOT=%UPDATE_DIR%\NanoCorona-main"
+set "REPO_ROOT=%UPDATE_DIR%"
 if not exist "%REPO_ROOT%\installer\Install-NanoCorona-OneClick.ps1" goto :error
+
+echo [2/4] Update source downloaded.
 
 echo [3/4] Building and installing...
 echo .NET 8 SDK version check is intentionally skipped.
@@ -38,7 +32,6 @@ if errorlevel 1 goto :error
 echo.
 echo [4/4] Cleaning temporary files...
 rmdir /s /q "%UPDATE_DIR%" >nul 2>&1
-del /q "%ZIP_FILE%" >nul 2>&1
 
 echo.
 echo ==============================================
@@ -50,10 +43,10 @@ echo.
 pause
 exit /b 0
 
-:no_curl
+:no_git
 echo.
-echo curl.exe was not found on this Windows installation.
-echo Please install/enable curl or update Windows.
+echo git.exe was not found on this Windows installation.
+echo Please install Git for Windows and make sure git.exe is in PATH.
 echo.
 goto :error
 
