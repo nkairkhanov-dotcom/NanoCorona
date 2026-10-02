@@ -12,6 +12,10 @@ Core pipeline:
 
 ## Documentation
 
+- [Installation](docs/INSTALL.md)
+- [User Guide](docs/USER_GUIDE.md)
+- [Compatibility Matrix](docs/COMPATIBILITY.md)
+
 - [Technical Specification](docs/TECHNICAL_SPEC.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Development Plan](docs/DEVELOPMENT_PLAN.md)
@@ -23,6 +27,10 @@ Core pipeline:
 - [Phase 3 Max Bridge](docs/PHASE3_MAX_BRIDGE.md)
 - [Scene JSON Schema](schemas/scene.schema.json)
 - [Edit JSON Schema](schemas/edit.schema.json)
+
+## Phase 6 product UI
+
+The UI is organized as a Corona-VFB-first dockable panel with model selection, API-key settings entry point, source/result/A-B controls, generation progress, Vision QA and correction workflow. Direct undocumented Corona VFB embedding is not a production dependency.
 
 ## Current prototype
 
@@ -63,4 +71,4 @@ UI prototype milestone — Corona VFB + dockable NanoCorona panel.
 
 Data milestone — Beauty + Z-Depth + Normals + Architecture Mask + Scene.json.
 
-Next implementation target: Edit.json generation and controlled editing; Phase 3 now connects Generate AI to the async NanoNetwork/Gemini bridge and Max preview.
+Phase 6 productization is implemented on the product branch: UI polish, installation script, user guide, compatibility matrix and CI artifact packaging. Live 3ds Max/Corona acceptance testing remains an explicit release gate.
