@@ -26,5 +26,6 @@
     <Compile Include="GeminiProvider.cs" />
     <Compile Include="NanoNetworkClient.cs" />
     <Compile Include="CredentialStore.cs" />
+    <Compile Include="NanoNetworkBridge.cs" />
   </ItemGroup>
 </Project>

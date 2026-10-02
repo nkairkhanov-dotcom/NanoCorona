@@ -46,16 +46,16 @@ Definition of done:
 
 ## Milestone 3 — First Max integration
 
-- [ ] MAXScript → C# bridge
-- [ ] Generate button
-- [ ] Progress
-- [ ] Cancel
-- [ ] Save result
-- [ ] Preview
+- [x] MAXScript → C# bridge
+- [x] Generate button
+- [x] Progress
+- [x] Cancel
+- [x] Save result
+- [x] Preview
 
 Definition of done:
 
-Beauty → AI → result выполняется из 3ds Max без ручного копирования файлов.
+Beauty → AI → result выполняется из 3ds Max без ручного копирования файлов. The Phase 3 bridge uses MAXScript timer polling so worker threads never touch Max UI/API.
 
 ## Milestone 4 — Controlled editing
 

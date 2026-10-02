@@ -20,6 +20,7 @@ Core pipeline:
 - [Corona VFB Panel Prototype](docs/PROTOTYPE_VFB_PANEL.md)
 - [Render Extraction](docs/RENDER_EXTRACTION.md)
 - [Network Transport](docs/NETWORK_TRANSPORT.md)
+- [Phase 3 Max Bridge](docs/PHASE3_MAX_BRIDGE.md)
 - [Scene JSON Schema](schemas/scene.schema.json)
 - [Edit JSON Schema](schemas/edit.schema.json)
 
@@ -62,4 +63,4 @@ UI prototype milestone — Corona VFB + dockable NanoCorona panel.
 
 Data milestone — Beauty + Z-Depth + Normals + Architecture Mask + Scene.json.
 
-Next implementation target: MAXScript → NanoNetwork async bridge, result preview/save, then Edit.json generation and controlled editing.
+Next implementation target: Edit.json generation and controlled editing; Phase 3 now connects Generate AI to the async NanoNetwork/Gemini bridge and Max preview.
