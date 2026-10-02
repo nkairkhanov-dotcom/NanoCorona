@@ -130,6 +130,7 @@ namespace NanoCorona.Network
         private ProviderRequest BuildProviderRequest(GenerationRequest request)
         {
             var scene = File.ReadAllText(request.SceneJsonPath, Encoding.UTF8);
+            var aspectRatio = ReadAspectRatio(scene);
 
             return new ProviderRequest
             {
@@ -139,6 +140,7 @@ namespace NanoCorona.Network
                     : request.Model,
                 Prompt = BuildPrompt(request, scene),
                 Resolution = string.IsNullOrWhiteSpace(request.Resolution) ? "2K" : request.Resolution,
+                AspectRatio = aspectRatio,
                 Strength = ClampStrength(request.Strength),
                 Images = new List<ProviderImagePart>
                 {
@@ -148,6 +150,40 @@ namespace NanoCorona.Network
                     ReadImage("architecture-mask", request.ArchitectureMaskPath)
                 }
             };
+        }
+
+        private static string ReadAspectRatio(string sceneJson)
+        {
+            try
+            {
+                var root = new JavaScriptSerializer().DeserializeObject(sceneJson) as Dictionary<string, object>;
+                var scene = root == null ? null : GetObject(root, "scene");
+                var render = scene == null ? null : GetObject(scene, "render");
+                var width = GetDouble(render, "width");
+                var height = GetDouble(render, "height");
+                if (width > 0 && height > 0)
+                    return (width / height).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + ":1";
+            }
+            catch { }
+
+            return "16:9";
+        }
+
+        private static Dictionary<string, object> GetObject(Dictionary<string, object> source, string key)
+        {
+            if (source == null) return null;
+            object value;
+            return source.TryGetValue(key, out value) ? value as Dictionary<string, object> : null;
+        }
+
+        private static double GetDouble(Dictionary<string, object> source, string key)
+        {
+            if (source == null) return 0;
+            object value;
+            if (!source.TryGetValue(key, out value) || value == null) return 0;
+            double result;
+            return double.TryParse(Convert.ToString(value), System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out result) ? result : 0;
         }
 
         private static string BuildPrompt(GenerationRequest request, string sceneJson)
