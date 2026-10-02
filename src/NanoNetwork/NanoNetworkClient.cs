@@ -295,7 +295,7 @@ namespace NanoCorona.Network
         private static string ReadEditPlan(string path)
         {
             if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-                throw new NanoCoronaException("Edit.json file is missing.", "EDIT_MISSING");
+                throw new NanoNetworkException("Edit.json file is missing.", "EDIT_MISSING");
 
             var json = File.ReadAllText(path, Encoding.UTF8);
             if (string.IsNullOrWhiteSpace(json))
