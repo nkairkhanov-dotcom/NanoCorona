@@ -11,6 +11,9 @@ namespace NanoCorona.Network
         private sealed class Job
         {
             public readonly CancellationTokenSource Cancellation = new CancellationTokenSource();
+            public int CancelRequested;
+            public int Finished;
+
             public volatile string State = "Queued";
             public volatile int Progress = 0;
             public string ResultPath;
@@ -84,7 +87,16 @@ namespace NanoCorona.Network
                     }, apiKey, job.Cancellation.Token).ConfigureAwait(false);
                     job.QaResult = result;
                     job.Progress = 100;
-                    job.State = result.Success ? "Succeeded" : "Failed";
+                    if (Volatile.Read(ref job.CancelRequested) != 0)
+                    {
+                        job.ErrorCode = "CANCELED";
+                        job.ErrorMessage = "Vision QA was canceled.";
+                        job.State = "Canceled";
+                    }
+                    else
+                    {
+                        job.State = result.Success ? "Succeeded" : "Failed";
+                    }
                     job.ErrorCode = result.ErrorCode;
                     job.ErrorMessage = result.ErrorMessage;
                     job.DurationMs = result.DurationMs;
@@ -100,6 +112,11 @@ namespace NanoCorona.Network
                     job.State = "Failed";
                     job.ErrorCode = "QA_ERROR";
                     job.ErrorMessage = ex.Message;
+                }
+                finally
+                {
+                    Volatile.Write(ref job.Finished, 1);
+                    TryDisposeCancellation(job);
                 }
             });
             return jobId;
@@ -212,8 +229,12 @@ namespace NanoCorona.Network
             if (!Jobs.TryGetValue(jobId, out job))
                 return;
 
-            job.Cancellation.Cancel();
-            job.State = "Canceling";
+            if (Interlocked.Exchange(ref job.CancelRequested, 1) == 0)
+            {
+                try { job.Cancellation.Cancel(); } catch (ObjectDisposedException) { }
+            }
+            if (Volatile.Read(ref job.Finished) == 0)
+                job.State = "Canceling";
         }
 
         public string GetJobState(string jobId)
@@ -266,7 +287,8 @@ namespace NanoCorona.Network
             Job job;
             if (Jobs.TryRemove(jobId, out job))
             {
-                try { job.Cancellation.Dispose(); } catch { }
+                if (Volatile.Read(ref job.Finished) != 0)
+                    TryDisposeCancellation(job);
             }
         }
 
@@ -331,14 +353,34 @@ namespace NanoCorona.Network
                 }
                 catch (Exception ex)
                 {
-                    job.ErrorCode = ex is NanoNetworkException
-                        ? ((NanoNetworkException)ex).ErrorCode
-                        : "BRIDGE_ERROR";
-                    job.ErrorMessage = ex.Message;
-                    job.Progress = 0;
-                    job.State = "Failed";
+                    if (ex is OperationCanceledException || Volatile.Read(ref job.CancelRequested) != 0)
+                    {
+                        job.ErrorCode = "CANCELED";
+                        job.ErrorMessage = "Generation was canceled.";
+                        job.Progress = 0;
+                        job.State = "Canceled";
+                    }
+                    else
+                    {
+                        job.ErrorCode = ex is NanoNetworkException
+                            ? ((NanoNetworkException)ex).ErrorCode
+                            : "BRIDGE_ERROR";
+                        job.ErrorMessage = ex.Message;
+                        job.Progress = 0;
+                        job.State = "Failed";
+                    }
+                }
+                finally
+                {
+                    Volatile.Write(ref job.Finished, 1);
+                    TryDisposeCancellation(job);
                 }
             });
+        }
+
+        private static void TryDisposeCancellation(Job job)
+        {
+            try { job.Cancellation.Dispose(); } catch (ObjectDisposedException) { }
         }
     }
 }
