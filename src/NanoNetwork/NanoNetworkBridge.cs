@@ -232,10 +232,6 @@ namespace NanoCorona.Network
                     job.Progress = 0;
                     job.State = "Failed";
                 }
-                finally
-                {
-                    try { job.Cancellation.Dispose(); } catch { }
-                }
             });
         }
     }
