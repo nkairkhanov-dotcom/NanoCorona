@@ -87,6 +87,7 @@ namespace NanoCorona.Network
                     }, apiKey, job.Cancellation.Token).ConfigureAwait(false);
                     job.QaResult = result;
                     job.Progress = 100;
+                    job.DurationMs = result.DurationMs;
                     if (Volatile.Read(ref job.CancelRequested) != 0)
                     {
                         job.ErrorCode = "CANCELED";
@@ -95,11 +96,10 @@ namespace NanoCorona.Network
                     }
                     else
                     {
+                        job.ErrorCode = result.ErrorCode;
+                        job.ErrorMessage = result.ErrorMessage;
                         job.State = result.Success ? "Succeeded" : "Failed";
                     }
-                    job.ErrorCode = result.ErrorCode;
-                    job.ErrorMessage = result.ErrorMessage;
-                    job.DurationMs = result.DurationMs;
                 }
                 catch (OperationCanceledException)
                 {
