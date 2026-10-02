@@ -31,6 +31,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     local lastResultBitmap = undefined
     local resultPath = ""
     local sceneJsonPath = ""
+    local editJsonPath = ""
     local busy = false
     local networkBridge = undefined
     local networkDllPath = ""
@@ -118,6 +119,68 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         )
     )
 
+    fn jsonEscape value =
+    (
+        local s = value as string
+        s = substituteString s "\\" "\\\\" 
+        s = substituteString s "\"" "\\\""
+        s = substituteString s "\r" ""
+        s = substituteString s "\n" "\\n"
+        s
+    )
+
+    fn getPresetName =
+    (
+        if editPresetDrop.selection == 2 then "Change Sky"
+        else if editPresetDrop.selection == 3 then "Weather"
+        else if editPresetDrop.selection == 4 then "Materials"
+        else if editPresetDrop.selection == 5 then "Wet Road"
+        else "Photorealism"
+    )
+
+    fn getPresetInstruction =
+    (
+        local p = getPresetName()
+        if p == "Change Sky" then "Replace the sky and distant atmospheric background only; preserve the building silhouette, facade and camera composition."
+        else if p == "Weather" then "Modify weather and atmosphere: clouds, haze, sunlight and ambient conditions. Keep architecture unchanged."
+        else if p == "Materials" then "Improve architectural material appearance, physically plausible roughness, reflections and texture response. Do not alter material boundaries or geometry."
+        else if p == "Wet Road" then "Make the visible road and pavement wet with realistic reflections, puddles and subtle darkening; preserve all architecture and camera composition."
+        else "Improve photorealism, lighting, material response and natural environmental integration without changing architectural geometry."
+    )
+
+    fn buildEditJson packageDir =
+    (
+        local p = getPresetName()
+        local strength = strengthSpinner.value
+        local protectedArchitecture = architectureLock.checked
+        local constraints = #(
+            "Preserve camera composition and framing.",
+            "Preserve architectural geometry, facade layout and window placement.",
+            "Do not add, remove or relocate structural building elements.",
+            "Keep the edit appearance-focused unless an operation explicitly targets an editable environment region."
+        )
+        if protectedArchitecture do append constraints "Architecture is protected by architecture_mask.png and must remain unchanged."
+
+        local opAction = if p == "Change Sky" then "replace" else "modify"
+        local target = if p == "Change Sky" then "sky" else if p == "Weather" then "environment" else if p == "Materials" then "architectural materials" else if p == "Wet Road" then "road and pavement" else "overall appearance"
+        local mask = if p == "Change Sky" then "environment" else if p == "Wet Road" then "road" else "auto"
+        local op = "{\"action\":\"" + opAction + "\",\"target\":\"" + (jsonEscape target) + "\",\"instruction\":\"" + (jsonEscape (getPresetInstruction())) + "\",\"strength\":" + (strength as string) + ",\"protected\":" + (protectedArchitecture as string) + ",\"appearanceOnly\":true,\"mask\":\"" + mask + "\"}"
+        local constraintJson = ""
+        for i = 1 to constraints.count do
+        (
+            if i > 1 do constraintJson += ","
+            constraintJson += "\"" + (jsonEscape constraints[i]) + "\""
+        )
+
+        local json = "{\"schemaVersion\":\"1.1\",\"preset\":\"" + (jsonEscape p) + "\",\"source\":\"NanoCorona MAXScript preset\",\"operations\":[" + op + "],\"globalConstraints\":[" + constraintJson + "]}"
+        local path = packageDir + "\\Edit.json"
+        local f = createFile path
+        format "%" json to:f
+        close f
+        editJsonPath = path
+        path
+    )
+
     fn getResolutionValue =
     (
         if resolutionDrop.selection == 3 then "4K"
@@ -147,10 +210,11 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         stamp = substituteString stamp "/" "_"
         stamp = substituteString stamp " " "_"
         local outputPath = outputDir + "\\nanocorona_result_" + stamp + ".png"
+        buildEditJson outputDir
 
         try
         (
-            currentJobId = networkBridge.StartGeneration                 sceneJsonPath                 resultPath                 (outputDir + "\\depth.png")                 (outputDir + "\\normals.png")                 (outputDir + "\\architecture_mask.png")                 promptEdit.text                 strengthSpinner.value                 (getResolutionValue())                 "gemini-3-pro-image"                 outputPath                 ""
+            currentJobId = networkBridge.StartGeneration                 sceneJsonPath                 resultPath                 (outputDir + "\\depth.png")                 (outputDir + "\\normals.png")                 (outputDir + "\\architecture_mask.png")                 editJsonPath                 promptEdit.text                 strengthSpinner.value                 (getResolutionValue())                 "gemini-3-pro-image"                 outputPath                 ""
 
             setStatus "Gemini generation started..."
             progress.value = 50
@@ -339,6 +403,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             sceneJsonPath = r.sceneJsonPath
             resultPath = r.beautyPath
             sceneLabel.text = ("Scene.json: " + sceneJsonPath)
+            editLabel.text = "Edit.json: " + editJsonPath
             packageLabel.text = "Beauty + Depth + Normals + Architecture Mask"
             previewBeauty r.beautyPath
             setStatus "Passes + Scene.json ready"
@@ -420,6 +485,11 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         button extractPassesButton "Extract Passes + Scene.json" width:300
     )
 
+    group "Edit" (
+        dropdownlist editPresetDrop "Preset:" items:#("Photorealism", "Change Sky", "Weather", "Materials", "Wet Road") selection:1 width:300
+        label presetHint "Preset creates a controlled Edit.json operation." align:#left
+    )
+
     group "Prompt" (
         edittext promptEdit "" text:"Photorealistic architectural visualization. Preserve building geometry, camera composition and facade layout. Improve materials, lighting, sky and environment." height:100 fieldWidth:300 multiLine:true labelOnTop:true
     )
@@ -449,6 +519,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
     group "Scene package" (
         label sceneLabel "Scene.json: not generated" width:300 align:#left
+        label editLabel "Edit.json: not generated" width:300 align:#left
         label packageLabel "Beauty / Depth / Normals / Mask" width:300 align:#left
     )
 
@@ -456,12 +527,22 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         label note1 "Generate: Corona passes → NanoNetwork.dll → Gemini → Max preview." align:#left
         label note2 "AI result is shown in this panel; Corona VFB source remains unchanged." align:#left
         label note3 "Select architectural objects before Setup Passes." align:#left
+        label note4 "Preset + Prompt are compiled into Edit.json before Gemini." align:#left
     )
 
     on openVfbButton pressed do openCoronaVfb()
     on setupPassesButton pressed do setupPasses()
     on extractPassesButton pressed do extractPasses()
     on generateButton pressed do generatePrototype()
+    on editPresetDrop selected i do
+    (
+        local p = getPresetName()
+        if p == "Photorealism" then promptEdit.text = "Improve photorealism, lighting and material response while preserving architecture and camera composition."
+        else if p == "Change Sky" then promptEdit.text = "Change the sky and atmosphere while preserving the building, camera and facade exactly."
+        else if p == "Weather" then promptEdit.text = "Change weather and atmosphere with realistic clouds, haze and sunlight; preserve architecture."
+        else if p == "Materials" then promptEdit.text = "Improve architectural materials, reflections, roughness and texture realism without changing geometry."
+        else if p == "Wet Road" then promptEdit.text = "Make the road and pavement wet with realistic reflections and puddles; preserve the building."
+    )
     on cancelButton pressed do cancelNetworkGeneration()
     on jobTimer tick do pollNetworkJob()
     on captureButton pressed do
