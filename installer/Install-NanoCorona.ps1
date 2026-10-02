@@ -39,10 +39,11 @@ foreach ($lang in $languageDirs) {
 
     $loader = Join-Path $startup "NanoCorona_Startup.ms"
     $loaderText = @'
-local p = (getDir #userScripts) + "\NanoCorona\NanoCorona_VFB_Prototype.ms"
-if (doesFileExist p) then
+global NanoCoronaStartupFile
+NanoCoronaStartupFile = (getDir #userScripts) + "\NanoCorona\NanoCorona_VFB_Prototype.ms"
+if (doesFileExist NanoCoronaStartupFile) then
 (
-    try (fileIn p) catch()
+    try (fileIn NanoCoronaStartupFile) catch()
 )
 '@
     Set-Content -Path $loader -Value $loaderText -Encoding UTF8
