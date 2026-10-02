@@ -19,6 +19,7 @@ Core pipeline:
 - [UI Specification](docs/UI_SPEC.md)
 - [Corona VFB Panel Prototype](docs/PROTOTYPE_VFB_PANEL.md)
 - [Render Extraction](docs/RENDER_EXTRACTION.md)
+- [Network Transport](docs/NETWORK_TRANSPORT.md)
 - [Scene JSON Schema](schemas/scene.schema.json)
 - [Edit JSON Schema](schemas/edit.schema.json)
 
@@ -47,7 +48,7 @@ Workflow:
 
 The extraction module creates/reuses Corona render elements, reads the current Corona VFB, saves the passes under the 3ds Max temp directory, and generates a provider-agnostic Scene.json.
 
-The Generate button currently stops at this structured input package. Gemini/Nano Banana transport comes next.
+The Generate button now has a C# transport target behind the structured input package. NanoNetwork.dll builds a provider request from Scene.json + Beauty + Depth + Normals + Architecture Mask and sends it asynchronously through the Gemini adapter.
 
 ## Development principle
 
@@ -61,4 +62,4 @@ UI prototype milestone — Corona VFB + dockable NanoCorona panel.
 
 Data milestone — Beauty + Z-Depth + Normals + Architecture Mask + Scene.json.
 
-Next implementation target: Edit.json generation and C# provider transport.
+Next implementation target: MAXScript → NanoNetwork async bridge, result preview/save, then Edit.json generation and controlled editing.

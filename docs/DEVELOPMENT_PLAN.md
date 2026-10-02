@@ -30,15 +30,15 @@ Beauty + Depth + Normals + mask получаются из текущего Coron
 
 ## Milestone 2 — Network prototype
 
-- [ ] C# class library
-- [ ] Provider interface
-- [ ] API credential storage
-- [ ] HTTPS transport
-- [ ] Async generation
-- [ ] Timeout
-- [ ] Retry policy
-- [ ] Result download
-- [ ] Error normalization
+- [x] C# class library
+- [x] Provider interface
+- [x] API credential storage (Windows DPAPI CurrentUser)
+- [x] HTTPS transport
+- [x] Async generation
+- [x] Timeout
+- [x] Retry policy
+- [x] Result download
+- [x] Error normalization
 
 Definition of done:
 

@@ -1,0 +1,18 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# NanoCorona local/runtime data
+credentials.bin
+NanoCorona/Current/
+*.request.json
+*.response.json
+
+# Never commit local API credentials
+.env
+*.key
