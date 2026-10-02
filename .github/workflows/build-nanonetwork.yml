@@ -1,0 +1,24 @@
+name: Build NanoNetwork
+
+on:
+  push:
+    branches: [main, feature/csharp-nanonetwork]
+    paths:
+      - "src/NanoNetwork/**"
+      - ".github/workflows/build-nanonetwork.yml"
+  pull_request:
+    paths:
+      - "src/NanoNetwork/**"
+      - ".github/workflows/build-nanonetwork.yml"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build NanoNetwork
+        run: msbuild src/NanoNetwork/NanoNetwork.csproj /p:Configuration=Release /m
