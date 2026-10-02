@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nanocorona.local/schema/qa.schema.json",
+  "title": "NanoCorona Vision QA Result",
+  "type": "object",
+  "required": ["success", "confidence", "architecturePreserved", "cameraPreserved", "compositionPreserved", "editSatisfied", "severity", "violations"],
+  "properties": {
+    "success": { "type": "boolean" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "architecturePreserved": { "type": "boolean" },
+    "cameraPreserved": { "type": "boolean" },
+    "compositionPreserved": { "type": "boolean" },
+    "editSatisfied": { "type": "boolean" },
+    "severity": { "enum": ["none", "low", "medium", "high"] },
+    "summary": { "type": "string" },
+    "violations": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}
