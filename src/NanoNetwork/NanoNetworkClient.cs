@@ -99,6 +99,115 @@ namespace NanoCorona.Network
             }
         }
 
+        public async Task<VisionQaResult> AnalyzeVisionQaAsync(
+            VisionQaRequest request,
+            string apiKey,
+            CancellationToken cancellationToken)
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                ValidateVisionQaRequest(request);
+                var prompt = BuildVisionQaPrompt(request);
+                var providerRequest = new ProviderRequest
+                {
+                    Provider = _provider.Name,
+                    Model = "gemini-3-pro-image",
+                    Prompt = prompt,
+                    Resolution = "1K",
+                    AspectRatio = ReadAspectRatio(File.ReadAllText(request.SceneJsonPath, Encoding.UTF8)),
+                    Strength = 1.0,
+                    Images = new List<ProviderImagePart>
+                    {
+                        ReadImage("source-beauty", request.SourceBeautyPath),
+                        ReadImage("result", request.ResultPath),
+                        ReadImage("architecture-mask", request.ArchitectureMaskPath)
+                    }
+                };
+
+                var response = await _provider.AnalyzeAsync(providerRequest, apiKey, cancellationToken).ConfigureAwait(false);
+                if (!response.Success)
+                    return new VisionQaResult { Success = false, ErrorCode = response.ErrorCode, ErrorMessage = response.ErrorMessage, RawText = response.Text, DurationMs = sw.ElapsedMilliseconds };
+
+                return ParseVisionQa(response.Text, sw.ElapsedMilliseconds);
+            }
+            catch (OperationCanceledException)
+            {
+                return new VisionQaResult { Success = false, ErrorCode = "CANCELED", ErrorMessage = "Vision QA was canceled.", DurationMs = sw.ElapsedMilliseconds };
+            }
+            catch (Exception ex)
+            {
+                return new VisionQaResult { Success = false, ErrorCode = ex is NanoNetworkException ? ((NanoNetworkException)ex).ErrorCode : "QA_ERROR", ErrorMessage = ex.Message, DurationMs = sw.ElapsedMilliseconds };
+            }
+        }
+
+        private static void ValidateVisionQaRequest(VisionQaRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            RequireFile(request.SceneJsonPath, "Scene.json");
+            RequireFile(request.SourceBeautyPath, "Source Beauty");
+            RequireFile(request.ResultPath, "Result");
+            RequireFile(request.ArchitectureMaskPath, "Architecture mask");
+            RequireFile(request.EditJsonPath, "Edit.json");
+        }
+
+        private static string BuildVisionQaPrompt(VisionQaRequest request)
+        {
+            return "You are a strict visual QA system for an architectural visualization. " +
+                "Compare source Beauty and AI result. The architecture mask marks protected architecture. " +
+                "Judge whether protected architecture, camera composition and facade/window layout are preserved. " +
+                "Also judge whether the requested edit appears satisfied. Do not reward changes outside the requested edit. " +
+                "Return ONLY compact JSON with keys: success, confidence, architecturePreserved, cameraPreserved, compositionPreserved, editSatisfied, severity, summary, violations. " +
+                "confidence is 0..1. severity is one of none, low, medium, high. violations is an array of short strings. " +
+                "\nUSER EDIT:\n" + request.Prompt +
+                "\nEDIT PLAN:\n" + File.ReadAllText(request.EditJsonPath, Encoding.UTF8) +
+                "\nSCENE:\n" + File.ReadAllText(request.SceneJsonPath, Encoding.UTF8);
+        }
+
+        private static VisionQaResult ParseVisionQa(string text, long durationMs)
+        {
+            try
+            {
+                var json = text ?? "";
+                var start = json.IndexOf('{');
+                var end = json.LastIndexOf('}');
+                if (start >= 0 && end > start) json = json.Substring(start, end - start + 1);
+                var root = new JavaScriptSerializer().DeserializeObject(json) as Dictionary<string, object>;
+                if (root == null) throw new NanoNetworkException("Vision QA returned invalid JSON.", "QA_INVALID");
+                return new VisionQaResult
+                {
+                    Success = GetBool(root, "success"),
+                    Confidence = ClampQaConfidence(GetDouble(root, "confidence")),
+                    ArchitecturePreserved = GetBool(root, "architecturePreserved"),
+                    CameraPreserved = GetBool(root, "cameraPreserved"),
+                    CompositionPreserved = GetBool(root, "compositionPreserved"),
+                    EditSatisfied = GetBool(root, "editSatisfied"),
+                    Severity = GetString(root, "severity", "high"),
+                    Summary = GetString(root, "summary", ""),
+                    Violations = GetStringArray(root, "violations"),
+                    RawText = text,
+                    DurationMs = durationMs
+                };
+            }
+            catch (Exception ex)
+            {
+                return new VisionQaResult { Success = false, ErrorCode = "QA_INVALID", ErrorMessage = ex.Message, RawText = text, DurationMs = durationMs };
+            }
+        }
+
+        private static double ClampQaConfidence(double value) { return value < 0 ? 0 : value > 1 ? 1 : value; }
+        private static bool GetBool(Dictionary<string, object> root, string key) { object v; return root.TryGetValue(key, out v) && Convert.ToBoolean(v); }
+        private static string GetString(Dictionary<string, object> root, string key, string fallback) { object v; return root.TryGetValue(key, out v) && v != null ? Convert.ToString(v) : fallback; }
+        private static string[] GetStringArray(Dictionary<string, object> root, string key)
+        {
+            object v;
+            var list = root.TryGetValue(key, out v) ? v as object[] : null;
+            if (list == null) return new string[0];
+            var result = new List<string>();
+            foreach (var item in list) if (item != null) result.Add(Convert.ToString(item));
+            return result.ToArray();
+        }
+
         public string BuildDiagnosticsJson(GenerationRequest request)
         {
             ValidateRequest(request);

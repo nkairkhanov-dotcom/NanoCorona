@@ -230,9 +230,54 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         )
     )
 
+    fn startVisionQa =
+    (
+        if resultPath == "" or editJsonPath == "" or sceneJsonPath == "" then
+        (
+            setStatus "QA inputs are missing"
+            return false
+        )
+        try
+        (
+            qaJobId = networkBridge.StartVisionQa sceneJsonPath (getFilenamePath sceneJsonPath + "beauty.png") resultPath (getFilenamePath sceneJsonPath + "architecture_mask.png") editJsonPath promptEdit.text
+            setStatus "Vision QA analyzing result..."
+            progress.value = 20
+            jobTimer.active = true
+            true
+        )
+        catch
+        (
+            setStatus "Could not start Vision QA"
+            false
+        )
+    )
+
+    fn startCorrection =
+    (
+        if qaJobId == "" then return false
+        local outputDir = getFilenamePath sceneJsonPath
+        local stamp = substituteString ((localTime as string)) ":" "_"
+        stamp = substituteString stamp "/" "_"
+        stamp = substituteString stamp " " "_"
+        local outputPath = outputDir + "\\nanocorona_correction_" + stamp + ".png"
+        try
+        (
+            currentJobId = networkBridge.StartCorrectionGeneration qaJobId sceneJsonPath resultPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath (getResolutionValue()) "gemini-3-pro-image" outputPath
+            setStatus "Correction pass started..."
+            progress.value = 20
+            jobTimer.active = true
+            true
+        )
+        catch
+        (
+            setStatus "Correction pass unavailable"
+            false
+        )
+    )
+
     fn pollNetworkJob =
     (
-        if currentJobId == "" or networkBridge == undefined then
+        if currentJobId == "" and qaJobId == "" or networkBridge == undefined then
         (
             jobTimer.active = false
             return()
@@ -240,6 +285,38 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 
         try
         (
+            if qaJobId != "" and currentJobId == "" then
+            (
+                local qaState = networkBridge.GetJobState qaJobId
+                local qp = networkBridge.GetJobProgress qaJobId
+                progress.value = qp
+                if qaState == "Analyzing" then setStatus "Vision QA: checking architecture..."
+                else if qaState == "Succeeded" then
+                (
+                    jobTimer.active = false
+                    local qaPassed = networkBridge.GetJobQaPassed qaJobId
+                    local qaSummary = networkBridge.GetJobQaSummary qaJobId
+                    if qaPassed then
+                        setStatus "QA passed • architecture preserved"
+                    else
+                    (
+                        setStatus "QA found violations — correction available"
+                        messageBox (qaSummary + "\n\nUse Correction Pass to repair the result.") title:"NanoCorona Vision QA"
+                        correctionButton.enabled = true
+                    )
+                    qaJobId = ""
+                    return()
+                )
+                else if qaState == "Failed" then
+                (
+                    jobTimer.active = false
+                    setStatus "Vision QA failed"
+                    qaJobId = ""
+                    return()
+                )
+                return()
+            )
+
             local state = networkBridge.GetJobState currentJobId
             local p = networkBridge.GetJobProgress currentJobId
             progress.value = p
@@ -262,6 +339,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 (
                     previewBeauty resultPath
                     setStatus ("AI result ready • " + ((networkBridge.GetJobDurationMs currentJobId) as string) + " ms")
+                    qaButton.enabled = true
                 )
                 else
                 (
@@ -272,6 +350,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 extractPassesButton.enabled = true
                 cancelButton.enabled = false
                 busy = false
+                qaButton.enabled = true
             )
             else if state == "Failed" then
             (
@@ -514,6 +593,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         imgTag resultPreview "" width:300 height:170 style:#bmp_stretch
         label resultPathLabel "No result yet." width:300 align:#left
         button showResultButton "Show Result" width:145 across:2
+        button qaButton "VISION QA" width:145 enabled:false
+        button correctionButton "CORRECTION PASS" width:145 enabled:false
         button captureButton "Capture VFB" width:145
     )
 
@@ -570,6 +651,11 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         if not ok do setStatus "No Beauty render"
     )
     on showResultButton pressed do showResult()
+    on qaButton pressed do startVisionQa()
+    on correctionButton pressed do
+    (
+        if startCorrection() then correctionButton.enabled = false
+    )
 
     on NanoCoronaVfbPrototype open do
     (

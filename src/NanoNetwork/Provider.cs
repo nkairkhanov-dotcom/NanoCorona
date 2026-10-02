@@ -11,5 +11,11 @@ namespace NanoCorona.Network
             string apiKey,
             NanoNetworkOptions options,
             CancellationToken cancellationToken);
+
+        Task<ProviderResponse> AnalyzeAsync(
+            ProviderRequest request,
+            string apiKey,
+            NanoNetworkOptions options,
+            CancellationToken cancellationToken);
     }
 }
