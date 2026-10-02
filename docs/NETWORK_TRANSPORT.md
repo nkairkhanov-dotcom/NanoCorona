@@ -93,7 +93,7 @@ Do not commit API keys, authorization headers, generated request JSON containing
 
 ## Current limitations
 
-- Aspect ratio is currently 16:9; it should be derived from Scene.json before production.
+- Aspect ratio is derived from Scene.json and mapped to the provider's supported ratio set; pixel-level output preservation still needs benchmark coverage.
 - There is no MAXScript → C# async bridge yet.
 - There is no Edit.json builder yet.
 - No live 3ds Max runtime test has been performed in this environment.
