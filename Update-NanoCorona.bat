@@ -16,7 +16,16 @@ set "REPO_URL=https://github.com/nkairkhanov-dotcom/NanoCorona.git"
 echo [1/4] Downloading latest NanoCorona from GitHub...
 if exist "%UPDATE_DIR%" rmdir /s /q "%UPDATE_DIR%"
 where git.exe >nul 2>&1
-if errorlevel 1 goto :no_git
+if not errorlevel 1 goto :git_ready
+echo Git was not found. Installing Git for Windows automatically...
+where winget.exe >nul 2>&1
+if errorlevel 1 goto :no_winget
+winget.exe install --id Git.Git --scope user --silent --accept-package-agreements --accept-source-agreements
+if errorlevel 1 goto :error
+set "PATH=%LOCALAPPDATA%\Programs\Git\cmd;%ProgramFiles%\Git\cmd;%PATH%"
+where git.exe >nul 2>&1
+if errorlevel 1 goto :git_not_found
+:git_ready
 git.exe clone --depth 1 --branch main "%REPO_URL%" "%UPDATE_DIR%"
 if errorlevel 1 goto :error
 set "REPO_ROOT=%UPDATE_DIR%"
@@ -43,10 +52,17 @@ echo.
 pause
 exit /b 0
 
-:no_git
+:no_winget
 echo.
-echo git.exe was not found on this Windows installation.
-echo Please install Git for Windows and make sure git.exe is in PATH.
+echo Git and Windows Package Manager (winget) were not found.
+echo Please install Git for Windows manually.
+echo.
+goto :error
+
+:git_not_found
+echo.
+echo Git installation completed, but git.exe was not found in the expected location.
+echo Please restart this updater once and try again.
 echo.
 goto :error
 
