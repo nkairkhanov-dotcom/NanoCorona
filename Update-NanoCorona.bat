@@ -15,8 +15,12 @@ set "ZIP_FILE=%TEMP%\NanoCorona-main.zip"
 set "REPO_URL=https://github.com/nkairkhanov-dotcom/NanoCorona/archive/refs/heads/main.zip"
 
 echo [1/4] Downloading latest NanoCorona from GitHub...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "if (Test-Path '%ZIP_FILE%') { Remove-Item '%ZIP_FILE%' -Force }; Invoke-WebRequest -Uri '%REPO_URL%' -OutFile '%ZIP_FILE%'"
+if exist "%ZIP_FILE%" del /q "%ZIP_FILE%"
+where curl.exe >nul 2>&1
+if errorlevel 1 goto :no_curl
+curl.exe -L --fail --silent --show-error --output "%ZIP_FILE%" "%REPO_URL%"
 if errorlevel 1 goto :error
+if not exist "%ZIP_FILE%" goto :error
 
 echo [2/4] Extracting update...
 if exist "%UPDATE_DIR%" rmdir /s /q "%UPDATE_DIR%"
@@ -45,6 +49,13 @@ echo Restart 3ds Max 2026 before using the update.
 echo.
 pause
 exit /b 0
+
+:no_curl
+echo.
+echo curl.exe was not found on this Windows installation.
+echo Please install/enable curl or update Windows.
+echo.
+goto :error
 
 :error
 echo.
