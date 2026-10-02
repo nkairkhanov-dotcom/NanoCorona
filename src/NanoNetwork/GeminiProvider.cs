@@ -93,6 +93,51 @@ namespace NanoCorona.Network
             return Failure("RETRY_EXHAUSTED", "Gemini request failed after retries.", 0);
         }
 
+        public Task<ProviderResponse> AnalyzeAsync(
+            ProviderRequest request,
+            string apiKey,
+            NanoNetworkOptions options,
+            CancellationToken cancellationToken)
+        {
+            return SendAnalysisAsync(request, apiKey, options, cancellationToken);
+        }
+
+        private async Task<ProviderResponse> SendAnalysisAsync(
+            ProviderRequest request,
+            string apiKey,
+            NanoNetworkOptions options,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(apiKey))
+                return Failure("AUTH_MISSING", "Gemini API key is empty.", 0);
+
+            var endpoint = string.Format(options.GeminiEndpoint, Uri.EscapeDataString("gemini-3-pro-image"));
+            var parts = new List<object> { new Dictionary<string, object> { { "text", request.Prompt } } };
+            foreach (var image in request.Images)
+                parts.Add(new Dictionary<string, object> { { "inline_data", new Dictionary<string, object> { { "mime_type", image.MimeType }, { "data", image.Base64Data } } } });
+
+            var body = new Dictionary<string, object>
+            {
+                { "contents", new object[] { new Dictionary<string, object> { { "role", "user" }, { "parts", parts.ToArray() } } } },
+                { "generationConfig", new Dictionary<string, object> { { "responseModalities", new[] { "TEXT" } } } }
+            };
+            var json = new JavaScriptSerializer().Serialize(body);
+
+            using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+            using (var message = new HttpRequestMessage(HttpMethod.Post, endpoint))
+            {
+                message.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
+                message.Content = content;
+                using (var response = await SendAsyncWithTimeout(message, options.Timeout, cancellationToken))
+                {
+                    var raw = await response.Content.ReadAsStringAsync();
+                    if (!response.IsSuccessStatusCode) return ParseError(response.StatusCode, raw);
+                    var parsed = ParseTextSuccess(raw);
+                    return parsed;
+                }
+            }
+        }
+
         private static Dictionary<string, object> BuildRequestBody(ProviderRequest request)
         {
             var parts = new List<object>();
@@ -183,6 +228,30 @@ namespace NanoCorona.Network
                     HttpCompletionOption.ResponseContentRead,
                     timeoutCts.Token);
             }
+        }
+
+        private static ProviderResponse ParseTextSuccess(string raw)
+        {
+            var root = new JavaScriptSerializer().DeserializeObject(raw) as Dictionary<string, object>;
+            if (root == null) return Failure("INVALID_RESPONSE", "Gemini returned invalid JSON.", 200, raw);
+            string text = null;
+            var candidates = GetArray(root, "candidates");
+            if (candidates != null)
+                foreach (var candidateObj in candidates)
+                {
+                    var candidate = candidateObj as Dictionary<string, object>;
+                    var content = candidate == null ? null : GetObject(candidate, "content");
+                    var parts = content == null ? null : GetArray(content, "parts");
+                    if (parts == null) continue;
+                    foreach (var partObj in parts)
+                    {
+                        var part = partObj as Dictionary<string, object>;
+                        var value = part == null ? null : GetString(part, "text");
+                        if (!string.IsNullOrEmpty(value)) text = value;
+                    }
+                }
+            if (string.IsNullOrWhiteSpace(text)) return Failure("NO_TEXT", "Gemini returned no QA text.", 200, raw);
+            return new ProviderResponse { Success = true, Text = text, HttpStatus = 200, RawResponse = raw };
         }
 
         private static ProviderResponse ParseSuccess(string raw)
