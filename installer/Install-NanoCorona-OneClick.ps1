@@ -10,6 +10,7 @@ $project = Join-Path $RepoRoot "src\NanoNetwork\NanoNetwork.csproj"
 $releaseDir = Join-Path $RepoRoot "src\NanoNetwork\bin\Release\net8.0-windows"
 $maxScript = Join-Path $RepoRoot "src\MaxScript\NanoCorona_VFB_Prototype.ms"
 $extractScript = Join-Path $RepoRoot "src\MaxScript\NanoCorona_RenderExtraction.ms"
+$toolbarScript = Join-Path $RepoRoot "src\MaxScript\NanoCorona_Toolbar.ms"
 
 if (!(Test-Path $project)) { throw "NanoCorona repository root is invalid: $RepoRoot" }
 
@@ -88,6 +89,7 @@ $dll = Join-Path $releaseDir "NanoNetwork.dll"
 if (!(Test-Path $dll)) { throw "NanoNetwork.dll was not produced at $releaseDir" }
 if (!(Test-Path $maxScript)) { throw "Missing MAXScript: $maxScript" }
 if (!(Test-Path $extractScript)) { throw "Missing render extraction script: $extractScript" }
+if (!(Test-Path $toolbarScript)) { throw "Missing NanoCorona toolbar script: $toolbarScript" }
 
 $maxRoot = Join-Path $env:LOCALAPPDATA "Autodesk\3dsMax\2026 - 64bit"
 if (!(Test-Path $maxRoot)) { throw "3ds Max 2026 user-data folder was not found: $maxRoot" }
@@ -107,6 +109,7 @@ foreach ($lang in $languageDirs) {
     Copy-Item (Join-Path $releaseDir "*") $scripts -Recurse -Force
     Copy-Item $maxScript $scripts -Force
     Copy-Item $extractScript $scripts -Force
+    Copy-Item $toolbarScript $scripts -Force
 
     $loader = Join-Path $startup "NanoCorona_Startup.ms"
     $loaderText = @'
@@ -115,6 +118,13 @@ NanoCoronaStartupFile = (getDir #userScripts) + "\NanoCorona\NanoCorona_VFB_Prot
 if (doesFileExist NanoCoronaStartupFile) then
 (
     try (fileIn NanoCoronaStartupFile) catch()
+)
+
+global NanoCoronaStartupToolbar
+NanoCoronaStartupToolbar = (getDir #userScripts) + "\NanoCorona\NanoCorona_Toolbar.ms"
+if (doesFileExist NanoCoronaStartupToolbar) then
+(
+    try (fileIn NanoCoronaStartupToolbar) catch()
 )
 '@
 
@@ -131,5 +141,5 @@ Write-Host "Next steps:"
 Write-Host " 1. Restart 3ds Max 2026."
 Write-Host " 2. Make sure Corona 15 is the active renderer."
 Write-Host " 3. Open Corona VFB."
-Write-Host " 4. Run NanoCorona from the loaded UI/startup script."
+Write-Host " 4. Use the NanoCorona bar at the top of 3ds Max: OPEN/HIDE NANOCORONA."
 Write-Host ""

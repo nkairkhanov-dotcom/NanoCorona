@@ -1,15 +1,25 @@
-name: Build NanoNetwork
+name: Build NanoCorona release
 
 on:
   push:
     branches: [main, phase6-max2026-corona15]
+    tags: ["v*"]
     paths:
-      - "src/NanoNetwork/**"
+      - "src/**"
+      - "installer/**"
+      - "docs/**"
+      - "Update-NanoCorona.bat"
       - ".github/workflows/build-nanonetwork.yml"
   pull_request:
     paths:
-      - "src/NanoNetwork/**"
+      - "src/**"
+      - "installer/**"
+      - "docs/**"
+      - "Update-NanoCorona.bat"
       - ".github/workflows/build-nanonetwork.yml"
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -22,14 +32,22 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Restore
-        run: dotnet restore src/NanoNetwork/NanoNetwork.csproj
+      - name: Restore and build NanoNetwork
+        run: dotnet build src/NanoNetwork/NanoNetwork.csproj -c Release
 
-      - name: Build NanoNetwork for 3ds Max 2026
-        run: dotnet build src/NanoNetwork/NanoNetwork.csproj -c Release --no-restore
+      - name: Build distributable ZIP
+        shell: powershell
+        run: .\installer\Build-Release.ps1
 
-      - name: Upload NanoNetwork artifact
+      - name: Upload installer package
         uses: actions/upload-artifact@v4
         with:
-          name: NanoCorona-NanoNetwork-net8
-          path: src/NanoNetwork/bin/Release/net8.0-windows/
+          name: NanoCorona-installer
+          path: dist/NanoCorona.zip
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/NanoCorona.zip
+          generate_release_notes: true

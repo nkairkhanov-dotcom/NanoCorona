@@ -20,10 +20,16 @@ if (!(Test-Path $dll)) { throw "Release DLL was not produced." }
 $stage = Join-Path $OutputDir "NanoCorona"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
-Copy-Item (Join-Path $releaseDir "*") $stage -Recurse -Force
+
+$runtimeStage = Join-Path $stage "runtime"
+New-Item -ItemType Directory -Force -Path $runtimeStage | Out-Null
+Copy-Item (Join-Path $releaseDir "*") $runtimeStage -Recurse -Force
 Copy-Item (Join-Path $RepoRoot "src\MaxScript\NanoCorona_VFB_Prototype.ms") $stage -Force
 Copy-Item (Join-Path $RepoRoot "src\MaxScript\NanoCorona_RenderExtraction.ms") $stage -Force
+Copy-Item (Join-Path $RepoRoot "src\MaxScript\NanoCorona_Toolbar.ms") $stage -Force
 Copy-Item (Join-Path $RepoRoot "installer\Install-NanoCorona.ps1") $stage -Force
+Copy-Item (Join-Path $RepoRoot "installer\Install-NanoCorona.cmd") $stage -Force
+Copy-Item (Join-Path $RepoRoot "Update-NanoCorona.bat") $stage -Force
 Copy-Item (Join-Path $RepoRoot "docs\INSTALL.md") $stage -Force
 Copy-Item (Join-Path $RepoRoot "docs\USER_GUIDE.md") $stage -Force
 Copy-Item (Join-Path $RepoRoot "docs\COMPATIBILITY.md") $stage -Force

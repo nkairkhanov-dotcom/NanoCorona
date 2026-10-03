@@ -283,8 +283,15 @@ namespace NanoCorona.Network
                     var candidates = new[]
                     {
                         new { Name = "1:1", Value = 1.0 },
+                        new { Name = "1:4", Value = 1.0 / 4.0 },
+                        new { Name = "4:1", Value = 4.0 },
+                        new { Name = "1:8", Value = 1.0 / 8.0 },
+                        new { Name = "8:1", Value = 8.0 },
+                        new { Name = "2:3", Value = 2.0 / 3.0 },
                         new { Name = "4:3", Value = 4.0 / 3.0 },
                         new { Name = "3:2", Value = 3.0 / 2.0 },
+                        new { Name = "4:5", Value = 4.0 / 5.0 },
+                        new { Name = "5:4", Value = 5.0 / 4.0 },
                         new { Name = "16:9", Value = 16.0 / 9.0 },
                         new { Name = "21:9", Value = 21.0 / 9.0 },
                         new { Name = "9:16", Value = 9.0 / 16.0 },
@@ -363,7 +370,10 @@ namespace NanoCorona.Network
 
                 foreach (var operation in operations)
                 {
-                    var protectedToken = operation["protected"];
+                    var operationObject = operation as JObject;
+                    if (operationObject == null) continue;
+
+                    var protectedToken = operationObject["protected"];
                     if (protectedToken != null && protectedToken.Type == JTokenType.Boolean &&
                         (bool)protectedToken)
                         return true;

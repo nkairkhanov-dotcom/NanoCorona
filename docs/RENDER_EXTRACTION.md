@@ -24,6 +24,7 @@ src/MaxScript/NanoCorona_RenderExtraction.ms provides:
   - CGeometry_NormalsShading
   - CMasking_Mask
 - Architecture mask configuration from the user's current object selection.
+- Z-Depth range calculation from the Euclidean camera distance to all eight camera-space bounding-box corners of every visible, renderable geometry node. Frozen nodes are included because they still render; the near and far bounds use only a 1% safety margin.
 - Extraction of Beauty from Corona VFB channel 0.
 - Extraction of technical render elements from Corona VFB channels.
 - PNG export to a temporary NanoCorona working directory.

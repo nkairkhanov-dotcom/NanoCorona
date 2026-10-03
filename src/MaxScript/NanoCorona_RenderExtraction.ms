@@ -73,12 +73,47 @@ struct NanoCoronaRenderExtraction
     (
         local cam
         cam = undefined
-        try (cam = getActiveCamera()) catch()
+
+        -- Prefer the camera explicitly selected in Render Setup. The fallbacks
+        -- preserve compatibility with scenes rendered from the active viewport.
+        try
+        (
+            if rendCam != undefined and isValidNode rendCam do cam = rendCam
+        )
+        catch()
+        if cam == undefined do
+        (
+            try
+            (
+                if renderCamera != undefined and isValidNode renderCamera do cam = renderCamera
+            )
+            catch()
+        )
+        if cam == undefined do
+        (
+            try (cam = getActiveCamera()) catch()
+        )
         if cam == undefined do
         (
             try (cam = viewport.getCamera()) catch()
         )
         cam
+    ),
+
+    fn isRenderableGeometry node =
+    (
+        if not isValidNode node then return false
+        if node.isHidden then return false
+
+        -- Frozen objects are still rendered by 3ds Max/Corona and must stay
+        -- in the depth range. Only an explicitly non-renderable node is skipped.
+        try
+        (
+            if not node.renderable then return false
+        )
+        catch()
+
+        true
     ),
 
     fn getElementManager =
@@ -190,12 +225,19 @@ struct NanoCoronaRenderExtraction
         local corners = #()
         local p = undefined
         local depth = 0.0
-        local span = 0.0
-        local padding = 0.0
+        local nearPadding = 0.0
+        local farPadding = 0.0
 
         if cam == undefined then return undefined
 
-        for n in geometry where (not n.isHidden and not n.isFrozen) do
+        -- nodeGetBoundingBox returns the coordinates in the supplied matrix3
+        -- coordinate system. Passing cam.transform therefore gives camera-space
+        -- corners; with 3ds Max cameras, points in front of the lens have -Z.
+        -- Corona defines Min Z and Max Z as distances from the camera, so use
+        -- the Euclidean length of each camera-space point, not only -Z. Check
+        -- every corner because a node pivot or bbox centre cannot represent the
+        -- nearest/farthest renderable surface reliably.
+        for n in geometry where isRenderableGeometry n do
         (
             try
             (
@@ -212,9 +254,9 @@ struct NanoCoronaRenderExtraction
                 )
                 for p in corners do
                 (
-                    depth = -p.z
-                    if depth > 0.0 then
+                    if -p.z > 0.0 then
                     (
+                        depth = length p
                         minDepth = amin minDepth depth
                         maxDepth = amax maxDepth depth
                         found = true
@@ -226,13 +268,16 @@ struct NanoCoronaRenderExtraction
 
         if not found then return undefined
 
-        span = maxDepth - minDepth
-        padding = amax (span * 0.05) 0.1
-        minDepth = amax 0.01 (minDepth - padding)
-        maxDepth = maxDepth + padding
+        -- Corona needs a non-zero range, but padding must not be based on the
+        -- complete scene span: a near foreground object plus a distant object
+        -- previously expanded the range by up to 5%, reducing depth precision.
+        nearPadding = amax 0.001 (minDepth * 0.01)
+        farPadding = amax 0.001 (maxDepth * 0.01)
+        minDepth = amax 0.001 (minDepth - nearPadding)
+        maxDepth = maxDepth + farPadding
 
         if maxDepth <= minDepth then
-            maxDepth = minDepth + 1.0
+            maxDepth = minDepth + 0.001
 
         #(minDepth, maxDepth)
     ),

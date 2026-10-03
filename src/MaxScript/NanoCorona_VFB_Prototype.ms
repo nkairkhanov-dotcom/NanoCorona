@@ -12,9 +12,15 @@
 
 global NanoCoronaVfbPrototype
 global NanoCoronaPrototypeDir
+global NanoCoronaPanelVisible
+global NanoCoronaOpenPanel
+global NanoCoronaClosePanel
+global NanoCoronaTogglePanel
+global NanoCoronaToolbarSync
 
 try (cui.UnRegisterDialogBar NanoCoronaVfbPrototype) catch()
 try (destroyDialog NanoCoronaVfbPrototype) catch()
+NanoCoronaPanelVisible = false
 
 NanoCoronaPrototypeDir = getFilenamePath (getSourceFileName())
 
@@ -973,6 +979,9 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 save bmp quiet:true
                 close bmp
                 beautyPath = p
+                resultPath = ""
+                NanoCoronaVfbPrototype.qaButton.enabled = false
+                NanoCoronaVfbPrototype.correctionButton.enabled = false
                 NanoCoronaVfbPrototype.previewBeauty p
                 NanoCoronaVfbPrototype.setStatus "Beauty captured"
                 ok = true
@@ -1008,9 +1017,46 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     (
         try (NanoCoronaVfbPrototype.jobTimer.active = false) catch()
         try (NanoCoronaVfbPrototype.cancelNetworkGeneration()) catch()
+        -- Closing the dialog with its native window button must also remove the
+        -- CUI registration. Otherwise a later OPEN can fail on a stale bar.
+        try (cui.UnRegisterDialogBar NanoCoronaVfbPrototype) catch()
+        NanoCoronaPanelVisible = false
+        try (NanoCoronaToolbarSync()) catch()
     )
 )
 
-createDialog NanoCoronaVfbPrototype 340 760 style:#(#style_titlebar, #style_sysmenu, #style_resizing)
-cui.RegisterDialogBar NanoCoronaVfbPrototype style:#(#cui_dock_right, #cui_floatable, #cui_handles)
-cui.DockDialogBar NanoCoronaVfbPrototype #cui_dock_right
+fn NanoCoronaOpenPanel =
+(
+    if NanoCoronaPanelVisible then return true
+
+    try
+    (
+        createDialog NanoCoronaVfbPrototype 340 760 style:#(#style_titlebar, #style_sysmenu, #style_resizing)
+        cui.RegisterDialogBar NanoCoronaVfbPrototype style:#(#cui_dock_right, #cui_floatable, #cui_handles)
+        cui.DockDialogBar NanoCoronaVfbPrototype #cui_dock_right
+        NanoCoronaPanelVisible = true
+        try (NanoCoronaToolbarSync()) catch()
+        true
+    )
+    catch
+    (
+        NanoCoronaPanelVisible = false
+        false
+    )
+)
+
+fn NanoCoronaClosePanel =
+(
+    if not NanoCoronaPanelVisible then return true
+
+    try (cui.UnRegisterDialogBar NanoCoronaVfbPrototype) catch()
+    try (destroyDialog NanoCoronaVfbPrototype) catch()
+    NanoCoronaPanelVisible = false
+    try (NanoCoronaToolbarSync()) catch()
+    true
+)
+
+fn NanoCoronaTogglePanel =
+(
+    if NanoCoronaPanelVisible then NanoCoronaClosePanel() else NanoCoronaOpenPanel()
+)
