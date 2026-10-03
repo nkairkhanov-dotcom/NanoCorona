@@ -1,57 +1,49 @@
-# NanoCorona — установка для 3ds Max 2026 + Corona 15
+# NanoCorona installation: 3ds Max 2026 + Corona 15
 
-## Требования
+## Requirements
 
-- Windows 10/11 x64.
-- Autodesk 3ds Max **2026**.
-- **Corona 15 for 3ds Max**.
-- Gemini API key с доступом к выбранной image-модели.
-- Для сборки из исходников: **.NET 8 SDK**.
+- Windows 10 or 11, x64.
+- Autodesk 3ds Max 2026 and Corona 15 for 3ds Max.
+- A Gemini API key with access to the selected image model.
+- .NET 8 SDK when building from this repository.
 
-Chaos сейчас указывает 3ds Max 2018+ и Windows 10+ как общие требования Corona, но NanoCorona пока не заявляет runtime compatibility со всеми этими версиями. См. compatibility matrix.
+NanoCorona currently targets this exact 3ds Max/Corona combination. Other Max versions are not claimed compatible by this build.
 
-## Быстрая установка из репозитория
+## Install from the repository
 
-1. Скачайте/клонируйте репозиторий.
-2. Откройте PowerShell в корне NanoCorona.
-3. Выполните:
+From a PowerShell window at the repository root, run:
 
-    powershell -ExecutionPolicy Bypass -File .\installer\Install-NanoCorona.ps1
+```powershell
+powershell -ExecutionPolicy Bypass -File .\installer\Install-NanoCorona.ps1
+```
 
-4. Скрипт пытается найти MSBuild и собрать `src/NanoNetwork/NanoNetwork.csproj` в Release.
-5. Он устанавливает MAXScript и `NanoNetwork.dll` в пользовательские папки Startup/scripts всех обнаруженных установок 3ds Max.
-6. Перезапустите 3ds Max.
+The script runs `dotnet build` for `net8.0-windows`, then copies the MAXScript files and the complete NanoNetwork runtime output to each detected 3ds Max 2026 language folder under:
 
-Если MSBuild не найден, заранее положите готовый `NanoNetwork.dll` в:
-`src/NanoNetwork/bin/Release/NanoNetwork.dll`
+```text
+%LOCALAPPDATA%\Autodesk\3dsMax\2026 - 64bit\<language>\scripts\NanoCorona
+```
 
-## Первый запуск
+It also creates `NanoCorona_Startup.ms` in the matching `scripts\startup` folder. Restart 3ds Max after installation.
 
-1. Запустите 3ds Max с активным Corona Renderer.
-2. Откройте NanoCorona из панели/Customize UI, либо выполните установленный startup script.
-3. Откройте Corona VFB.
-4. Выберите архитектурные объекты, которые должны оставаться защищёнными.
-5. Нажмите **Setup Depth / Normals / Architecture Mask**.
-6. Сделайте обычный Corona render.
-7. Нажмите **Extract Passes + Scene.json**.
-8. В NanoCorona откройте **Settings** и сохраните Gemini API key.
-9. Выберите preset/model/resolution, проверьте Prompt.
-10. Нажмите **GENERATE AI**.
+If the .NET 8 SDK is unavailable, install it or build on another machine and provide the complete contents of:
 
-API key не записывается в репозиторий. NanoNetwork использует Windows DPAPI CurrentUser storage.
+```text
+src\NanoNetwork\bin\Release\net8.0-windows\
+```
 
-## Где лежат результаты
+## First use
 
-Рабочий пакет создаётся в:
+1. Start 3ds Max 2026 with Corona 15 as the active renderer.
+2. Select the building objects that must be protected.
+3. Open NanoCorona, run **Setup Depth / Normals / Architecture Mask**, then render again.
+4. Choose **Extract Passes + Scene.json**.
+5. Open **Settings** and save the Gemini API key. It is encrypted with Windows DPAPI for the current Windows user.
+6. Select the edit options and choose **Generate AI**.
 
-`%TEMP%\NanoCorona\Current\`
+The working package and results are written to `%TEMP%\NanoCorona\Current`. The source Corona render is not overwritten.
 
-В нём находятся Beauty, технические passes, Scene.json, Edit.json и AI results.
+## Update and removal
 
-## Обновление
+Run the installer again after updating the repository, or use `Update-NanoCorona.bat`. The updater installs .NET 8 automatically when needed.
 
-Запустите installer повторно после получения новой версии. Он заменяет NanoCorona files, но не трогает сохранённый API key.
-
-## Удаление
-
-Удалите NanoCorona из пользовательских `scripts\NanoCorona` и startup-папок соответствующих версий 3ds Max. API key можно удалить через существующий credential workflow/обнуление credential store; installer сам credentials не удаляет.
+To remove NanoCorona, delete the `scripts\NanoCorona` directory and `NanoCorona_Startup.ms` from every installed 3ds Max 2026 language folder. Credentials are stored separately at `%LOCALAPPDATA%\NanoCorona\credentials.bin` and are not removed by the installer.

@@ -152,14 +152,20 @@ namespace NanoCorona.Network
 
         private static string BuildVisionQaPrompt(VisionQaRequest request)
         {
+            var editJson = File.ReadAllText(request.EditJsonPath, Encoding.UTF8);
+            var architectureLocked = IsArchitectureLocked(editJson);
+            var architectureRule = architectureLocked
+                ? "The architecture mask marks protected architecture that must remain visually unchanged. "
+                : "The user disabled Architecture locked. The architecture mask identifies the architecture region; requested appearance changes there are allowed even if Scene.json marks it protected, but geometry, facade/window layout and camera composition must remain preserved. ";
+
             return "You are a strict visual QA system for an architectural visualization. " +
-                "Compare source Beauty and AI result. The architecture mask marks protected architecture. " +
-                "Judge whether protected architecture, camera composition and facade/window layout are preserved. " +
+                "Compare source Beauty and AI result. " + architectureRule +
+                "Judge whether architecture, camera composition and facade/window layout are preserved. " +
                 "Also judge whether the requested edit appears satisfied. Do not reward changes outside the requested edit. " +
                 "Return ONLY compact JSON with keys: success, confidence, architecturePreserved, cameraPreserved, compositionPreserved, editSatisfied, severity, summary, violations. " +
                 "confidence is 0..1. severity is one of none, low, medium, high. violations is an array of short strings. " +
                 "\nUSER EDIT:\n" + request.Prompt +
-                "\nEDIT PLAN:\n" + File.ReadAllText(request.EditJsonPath, Encoding.UTF8) +
+                "\nEDIT PLAN:\n" + editJson +
                 "\nSCENE:\n" + File.ReadAllText(request.SceneJsonPath, Encoding.UTF8);
         }
 
@@ -240,6 +246,7 @@ namespace NanoCorona.Network
             var scene = File.ReadAllText(request.SceneJsonPath, Encoding.UTF8);
             var aspectRatio = ReadAspectRatio(scene);
             var editJson = ReadEditPlan(request.EditJsonPath);
+            var architectureLocked = IsArchitectureLocked(editJson);
 
             return new ProviderRequest
             {
@@ -247,7 +254,7 @@ namespace NanoCorona.Network
                 Model = string.IsNullOrWhiteSpace(request.Model)
                     ? "gemini-3-pro-image"
                     : request.Model,
-                Prompt = BuildPrompt(request, scene, editJson),
+                Prompt = BuildPrompt(request, scene, editJson, architectureLocked),
                 Resolution = string.IsNullOrWhiteSpace(request.Resolution) ? "2K" : request.Resolution,
                 AspectRatio = aspectRatio,
                 Strength = ClampStrength(request.Strength),
@@ -321,21 +328,53 @@ namespace NanoCorona.Network
                 System.Globalization.CultureInfo.InvariantCulture, out result) ? result : 0;
         }
 
-        private static string BuildPrompt(GenerationRequest request, string sceneJson, string editJson)
+        private static string BuildPrompt(
+            GenerationRequest request,
+            string sceneJson,
+            string editJson,
+            bool architectureLocked)
         {
+            var architectureRule = architectureLocked
+                ? "The architecture protection mask is authoritative; never change protected architecture pixels. "
+                : "The user disabled Architecture locked. The mask identifies the building region and may receive requested appearance-only changes even if Scene.json marks it protected, but never alter its geometry, facade layout or window placement. ";
+
             return
                 "You are performing a controlled edit of an architectural visualization. " +
                 "The first image is the Corona Beauty render and is the primary visual source. " +
                 "The following images are technical references in order: Z-Depth, shading normals, " +
                 "and an architecture protection mask. Use them as spatial/control references, not as " +
-                "visible textures. Preserve camera composition, architectural geometry, facade layout, " +
-                "window placement and all regions marked protected. Prefer appearance, lighting, material " +
-                "and environment changes. Do not invent structural changes. The architecture protection mask is authoritative; never change protected architecture pixels. " +
+                "visible textures. Preserve camera composition, architectural geometry, facade layout and " +
+                "window placement. Prefer appearance, lighting, material " +
+                "and environment changes. Do not invent structural changes. " + architectureRule +
                 "Requested edit strength: " +
                 ClampStrength(request.Strength).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) +
                 ".\n\nUSER PROMPT:\n" + request.Prompt +
                 "\n\nEDIT PLAN (provider-agnostic JSON):\n" + editJson +
                 "\n\nSCENE CONTEXT (provider-agnostic JSON):\n" + sceneJson;
+        }
+
+        private static bool IsArchitectureLocked(string editJson)
+        {
+            try
+            {
+                var root = JObject.Parse(editJson);
+                var operations = root["operations"] as JArray;
+                if (operations == null) return false;
+
+                foreach (var operation in operations)
+                {
+                    var protectedToken = operation["protected"];
+                    if (protectedToken != null && protectedToken.Type == JTokenType.Boolean &&
+                        (bool)protectedToken)
+                        return true;
+                }
+            }
+            catch (JsonException)
+            {
+                // ReadEditPlan performs the user-facing validation and reports malformed JSON.
+            }
+
+            return false;
         }
 
         private static ProviderImagePart ReadImage(string role, string path)

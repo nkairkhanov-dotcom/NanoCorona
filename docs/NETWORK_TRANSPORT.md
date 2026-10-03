@@ -1,100 +1,36 @@
-# NanoNetwork transport milestone
+# NanoNetwork transport
 
-## Goal
+## Purpose
 
-Move the structured Corona input package into an asynchronous C# provider transport:
+NanoNetwork moves a structured Corona package to an image-generation provider without blocking the 3ds Max UI:
 
-    Scene.json
-      + Beauty
-      + Z-Depth
-      + Normals
-      + Architecture Mask
-      + Prompt
-      ↓
-    NanoNetwork.dll
-      ↓
-    Provider adapter
-      ↓
-    Gemini image model
-      ↓
-    Result image
+    Scene.json + Edit.json + Beauty + Z-Depth + Normals + Architecture Mask + Prompt
+        -> NanoNetwork.dll -> Gemini -> result image
 
-## Assembly
+## Runtime and public boundary
 
-Project:
+`src/NanoNetwork/NanoNetwork.csproj` targets **net8.0-windows** for the 3ds Max 2026 + Corona 15 release target. Its provider-independent boundary is `IImageProvider`; `GeminiProvider` is the current implementation.
 
-    src/NanoNetwork/NanoNetwork.csproj
+`NanoNetworkClient.GenerateAsync` validates the package, builds a provider request and saves a returned image. `NanoNetworkBridge` exposes start, progress, cancellation, result and QA methods to MAXScript while keeping HTTP and file work on background tasks.
 
-Output:
+## Gemini adapter
 
-    NanoNetwork.dll
+- Calls Gemini `v1` `generateContent` with `x-goog-api-key` authentication.
+- Sends the prompt and every image as inline base64 parts.
+- Requests text and image generation modalities, normalizes 1K/2K/4K resolution, and maps the closest supported aspect ratio from `Scene.json`.
+- Extracts the returned inline image data and normalizes provider failures.
+- Applies a five-minute default timeout, bounded retry with exponential backoff, and `Retry-After` where present to generation and Vision QA requests.
 
-The project targets .NET Framework 4.6.2 as a conservative baseline for the older 3ds Max compatibility range. The exact supported 3ds Max/Corona matrix must still be tested before packaging.
+The Beauty image is the primary visual source. Depth, normals and the architecture mask are reference/control images; they are not assumed to be native numerical control channels of a Gemini model.
 
-## Public API
+## Credentials and safety
 
-NanoNetworkClient.GenerateAsync(GenerationRequest, apiKey, CancellationToken) is the integration entry point.
+The Gemini API key is saved under `%LOCALAPPDATA%\NanoCorona\credentials.bin` using Windows DPAPI with `CurrentUser` scope. It is never emitted by the diagnostics API or stored in a project package.
 
-The request contains paths to Scene.json, Beauty, Z-Depth, Normals, Architecture Mask, plus prompt, strength, resolution, model and an optional output path.
-
-The result contains success/failure, result path, provider/model, normalized error code/message, HTTP status and request duration.
-
-## Provider boundary
-
-IImageProvider keeps the transport provider-agnostic.
-
-Current implementation:
-
-- GeminiProvider
-- Gemini REST generateContent
-- API key in x-goog-api-key
-- image inputs as inline base64 parts
-- image-only response modality
-- 1K / 2K / 4K request mapping
-- image extraction from inline response data
-
-The implementation is REST-based and does not depend on the Google SDK.
-
-## Input semantics
-
-The first image is Beauty. The following images are:
-
-1. Z-Depth
-2. Normals
-3. Architecture Mask
-
-The generated control prompt explicitly tells the model that technical passes are spatial/control references and must not become visible textures.
-
-Scene.json is provider-agnostic context. It is not treated as a literal command language.
-
-## Reliability
-
-- asynchronous HTTP
-- cancellation token
-- per-request timeout
-- bounded retries for transient HTTP failures and timeout/network failures
-- Retry-After support
-- normalized provider errors
-- result written only after a valid image response
-
-## Credentials
-
-CredentialStore uses Windows DPAPI with CurrentUser scope.
-
-Default path:
-
-    %LOCALAPPDATA%\NanoCorona\credentials.bin
-
-The API key is never included in diagnostics JSON.
-
-## Important security rule
-
-Do not commit API keys, authorization headers, generated request JSON containing base64 image data, generated results or credential files.
+Do not commit API keys, authorization headers, base64 request payloads, generated results, or credential files.
 
 ## Current limitations
 
-- Aspect ratio is derived from Scene.json and mapped to the provider's supported ratio set; pixel-level output preservation still needs benchmark coverage.
-- There is no MAXScript → C# async bridge yet.
-- There is no Edit.json builder yet.
-- No live 3ds Max runtime test has been performed in this environment.
-- Technical-pass semantics must be benchmarked against the selected Gemini model; sending all four images is an experiment, not a claim that the model will numerically consume depth/normals.
+- Progress is phase-based, rather than a provider-native percentage.
+- Technical-pass effectiveness and output-preservation quality require the documented A/B benchmark.
+- No live 3ds Max 2026 + Corona 15 + Gemini acceptance test has been recorded for this repository state.

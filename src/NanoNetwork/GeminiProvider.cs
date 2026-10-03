@@ -124,19 +124,58 @@ namespace NanoCorona.Network
             };
             var json = JsonConvert.SerializeObject(body);
 
-            using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
-            using (var message = new HttpRequestMessage(HttpMethod.Post, endpoint))
+            for (var attempt = 0; attempt <= options.MaxRetries; attempt++)
             {
-                message.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
-                message.Content = content;
-                using (var response = await SendAsyncWithTimeout(message, options.Timeout, cancellationToken))
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
                 {
-                    var raw = await response.Content.ReadAsStringAsync();
-                    if (!response.IsSuccessStatusCode) return ParseError(response.StatusCode, raw);
-                    var parsed = ParseTextSuccess(raw);
-                    return parsed;
+                    using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+                    using (var message = new HttpRequestMessage(HttpMethod.Post, endpoint))
+                    {
+                        message.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
+                        message.Content = content;
+
+                        using (var response = await SendAsyncWithTimeout(message, options.Timeout, cancellationToken))
+                        {
+                            var raw = await response.Content.ReadAsStringAsync();
+                            if ((int)response.StatusCode == 429 || IsTransient(response.StatusCode))
+                            {
+                                if (attempt < options.MaxRetries)
+                                {
+                                    await DelayForRetry(attempt, response, cancellationToken);
+                                    continue;
+                                }
+                            }
+
+                            if (!response.IsSuccessStatusCode)
+                                return ParseError(response.StatusCode, raw);
+
+                            return ParseTextSuccess(raw);
+                        }
+                    }
+                }
+                catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    if (attempt < options.MaxRetries)
+                    {
+                        await DelayForRetry(attempt, null, cancellationToken);
+                        continue;
+                    }
+                    return Failure("TIMEOUT", "Gemini Vision QA request timed out.", 408);
+                }
+                catch (HttpRequestException ex)
+                {
+                    if (attempt < options.MaxRetries)
+                    {
+                        await DelayForRetry(attempt, null, cancellationToken);
+                        continue;
+                    }
+                    return Failure("NETWORK_ERROR", ex.Message, 0);
                 }
             }
+
+            return Failure("RETRY_EXHAUSTED", "Gemini Vision QA request failed after retries.", 0);
         }
 
         private static Dictionary<string, object> BuildRequestBody(ProviderRequest request)

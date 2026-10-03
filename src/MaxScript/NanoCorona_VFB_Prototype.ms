@@ -54,6 +54,7 @@ if not NanoCoronaLoadRenderExtraction() then
 rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
 (
     local lastResultBitmap = undefined
+    local beautyPath = ""
     local resultPath = ""
     local sceneJsonPath = ""
     local editJsonPath = ""
@@ -82,11 +83,13 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     fn findNetworkDll =
     (
         local candidates = #()
+        append candidates (NanoCoronaPrototypeDir + "..\\NanoNetwork\\bin\\Release\\net8.0-windows\\NanoNetwork.dll")
+        append candidates (NanoCoronaPrototypeDir + "..\\NanoNetwork\\bin\\Debug\\net8.0-windows\\NanoNetwork.dll")
         append candidates (NanoCoronaPrototypeDir + "..\\NanoNetwork\\bin\\Release\\NanoNetwork.dll")
         append candidates (NanoCoronaPrototypeDir + "..\\NanoNetwork\\bin\\Debug\\NanoNetwork.dll")
         append candidates ((getDir #userScripts) + "\\NanoCorona\\NanoNetwork.dll")
         append candidates ((getDir #plugcfg) + "\\NanoCorona\\NanoNetwork.dll")
-        append candidates (getDir #temp + "\\NanoCorona\\NanoNetwork.dll")
+        append candidates ((getDir #temp) + "\\NanoCorona\\NanoNetwork.dll")
 
         for p in candidates do
         (
@@ -315,6 +318,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         json = "{\"schemaVersion\":\"1.1\",\"preset\":\"" + (NanoCoronaVfbPrototype.jsonEscape p) + "\",\"source\":\"NanoCorona MAXScript preset\",\"operations\":[" + op + "],\"globalConstraints\":[" + constraintJson + "]}"
         path = packageDir + "\\Edit.json"
         f = createFile path
+        if f == undefined then return undefined
         format "%" json to:f
         close f
         editJsonPath = path
@@ -346,6 +350,18 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             NanoCoronaVfbPrototype.setStatus "Scene.json is missing"
             return false
         )
+        if beautyPath == "" or not doesFileExist beautyPath then
+        (
+            NanoCoronaVfbPrototype.setStatus "Corona Beauty is missing"
+            return false
+        )
+
+        if qaJobId != "" do
+        (
+            try (networkBridge.ForgetJob qaJobId) catch()
+            qaJobId = ""
+            NanoCoronaVfbPrototype.correctionButton.enabled = false
+        )
 
         outputDir = getFilenamePath sceneJsonPath
         stamp = (localTime as string)
@@ -353,14 +369,19 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         stamp = substituteString stamp "/" "_"
         stamp = substituteString stamp " " "_"
         outputPath = outputDir + "\\nanocorona_result_" + stamp + ".png"
-        NanoCoronaVfbPrototype.buildEditJson outputDir
+        if NanoCoronaVfbPrototype.buildEditJson outputDir == undefined then
+        (
+            NanoCoronaVfbPrototype.setStatus "Could not write Edit.json"
+            return false
+        )
 
         try
         (
-            currentJobId = networkBridge.StartGeneration sceneJsonPath resultPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath NanoCoronaVfbPrototype.promptEdit.text NanoCoronaVfbPrototype.strengthSpinner.value (NanoCoronaVfbPrototype.getResolutionValue()) selectedModel outputPath ""
+            currentJobId = networkBridge.StartGeneration sceneJsonPath beautyPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath NanoCoronaVfbPrototype.promptEdit.text NanoCoronaVfbPrototype.strengthSpinner.value (NanoCoronaVfbPrototype.getResolutionValue()) selectedModel outputPath ""
 
             NanoCoronaVfbPrototype.setStatus "Gemini generation started..."
             NanoCoronaVfbPrototype.progress.value = 50
+            NanoCoronaVfbPrototype.cancelButton.enabled = true
             NanoCoronaVfbPrototype.jobTimer.active = true
             true
         )
@@ -380,22 +401,46 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             NanoCoronaVfbPrototype.setStatus "NanoNetwork.dll is not loaded"
             return false
         )
-        if resultPath == "" or editJsonPath == "" or sceneJsonPath == "" then
+        if beautyPath == "" or not doesFileExist beautyPath or resultPath == "" or not doesFileExist resultPath or editJsonPath == "" or sceneJsonPath == "" then
         (
             NanoCoronaVfbPrototype.setStatus "QA inputs are missing"
             return false
         )
+        if qaJobId != "" then
+        (
+            if not networkBridge.IsJobFinished qaJobId then
+            (
+                NanoCoronaVfbPrototype.setStatus "Vision QA is already running"
+                return false
+            )
+            try (networkBridge.ForgetJob qaJobId) catch()
+            qaJobId = ""
+        )
         try
         (
-            qaJobId = networkBridge.StartVisionQa sceneJsonPath (getFilenamePath sceneJsonPath + "beauty.png") resultPath (getFilenamePath sceneJsonPath + "architecture_mask.png") editJsonPath NanoCoronaVfbPrototype.promptEdit.text
+            qaJobId = networkBridge.StartVisionQa sceneJsonPath beautyPath resultPath (getFilenamePath sceneJsonPath + "architecture_mask.png") editJsonPath NanoCoronaVfbPrototype.promptEdit.text
             NanoCoronaVfbPrototype.setStatus "Vision QA analyzing result..."
             NanoCoronaVfbPrototype.progress.value = 20
+            busy = true
+            NanoCoronaVfbPrototype.generateButton.enabled = false
+            NanoCoronaVfbPrototype.setupPassesButton.enabled = false
+            NanoCoronaVfbPrototype.extractPassesButton.enabled = false
+            NanoCoronaVfbPrototype.cancelButton.enabled = true
+            NanoCoronaVfbPrototype.qaButton.enabled = false
+            NanoCoronaVfbPrototype.correctionButton.enabled = false
             NanoCoronaVfbPrototype.jobTimer.active = true
             true
         )
         catch
         (
+            qaJobId = ""
             NanoCoronaVfbPrototype.setStatus "Could not start Vision QA"
+            busy = false
+            NanoCoronaVfbPrototype.generateButton.enabled = true
+            NanoCoronaVfbPrototype.setupPassesButton.enabled = true
+            NanoCoronaVfbPrototype.extractPassesButton.enabled = true
+            NanoCoronaVfbPrototype.cancelButton.enabled = false
+            NanoCoronaVfbPrototype.qaButton.enabled = true
             false
         )
     )
@@ -413,9 +458,16 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         outputPath = outputDir + "\\nanocorona_correction_" + stamp + ".png"
         try
         (
-            currentJobId = networkBridge.StartCorrectionGeneration qaJobId sceneJsonPath resultPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath (NanoCoronaVfbPrototype.getResolutionValue()) "gemini-3-pro-image" outputPath
+            currentJobId = networkBridge.StartCorrectionGeneration qaJobId sceneJsonPath beautyPath (outputDir + "\\depth.png") (outputDir + "\\normals.png") (outputDir + "\\architecture_mask.png") editJsonPath (NanoCoronaVfbPrototype.getResolutionValue()) "gemini-3-pro-image" outputPath
+            try (networkBridge.ForgetJob qaJobId) catch()
+            qaJobId = ""
             NanoCoronaVfbPrototype.setStatus "Correction pass started..."
             NanoCoronaVfbPrototype.progress.value = 20
+            busy = true
+            NanoCoronaVfbPrototype.generateButton.enabled = false
+            NanoCoronaVfbPrototype.setupPassesButton.enabled = false
+            NanoCoronaVfbPrototype.extractPassesButton.enabled = false
+            NanoCoronaVfbPrototype.cancelButton.enabled = true
             NanoCoronaVfbPrototype.jobTimer.active = true
             true
         )
@@ -463,14 +515,46 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                         messageBox (qaSummary + "\n\nUse Correction Pass to repair the result.") title:"NanoCorona Vision QA"
                         NanoCoronaVfbPrototype.correctionButton.enabled = true
                     )
-                    qaJobId = ""
+                    if qaPassed then
+                    (
+                        try (networkBridge.ForgetJob qaJobId) catch()
+                        qaJobId = ""
+                        NanoCoronaVfbPrototype.correctionButton.enabled = false
+                    )
+                    busy = false
+                    NanoCoronaVfbPrototype.generateButton.enabled = true
+                    NanoCoronaVfbPrototype.setupPassesButton.enabled = true
+                    NanoCoronaVfbPrototype.extractPassesButton.enabled = true
+                    NanoCoronaVfbPrototype.cancelButton.enabled = false
+                    NanoCoronaVfbPrototype.qaButton.enabled = true
                     return()
                 )
                 else if qaState == "Failed" then
                 (
                     NanoCoronaVfbPrototype.jobTimer.active = false
                     NanoCoronaVfbPrototype.setStatus "Vision QA failed"
+                    try (networkBridge.ForgetJob qaJobId) catch()
                     qaJobId = ""
+                    busy = false
+                    NanoCoronaVfbPrototype.generateButton.enabled = true
+                    NanoCoronaVfbPrototype.setupPassesButton.enabled = true
+                    NanoCoronaVfbPrototype.extractPassesButton.enabled = true
+                    NanoCoronaVfbPrototype.cancelButton.enabled = false
+                    NanoCoronaVfbPrototype.qaButton.enabled = true
+                    return()
+                )
+                else if qaState == "Canceled" then
+                (
+                    NanoCoronaVfbPrototype.jobTimer.active = false
+                    NanoCoronaVfbPrototype.setStatus "Vision QA canceled"
+                    try (networkBridge.ForgetJob qaJobId) catch()
+                    qaJobId = ""
+                    busy = false
+                    NanoCoronaVfbPrototype.generateButton.enabled = true
+                    NanoCoronaVfbPrototype.setupPassesButton.enabled = true
+                    NanoCoronaVfbPrototype.extractPassesButton.enabled = true
+                    NanoCoronaVfbPrototype.cancelButton.enabled = false
+                    NanoCoronaVfbPrototype.qaButton.enabled = true
                     return()
                 )
                 return()
@@ -510,6 +594,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 NanoCoronaVfbPrototype.cancelButton.enabled = false
                 busy = false
                 NanoCoronaVfbPrototype.qaButton.enabled = true
+                try (networkBridge.ForgetJob currentJobId) catch()
                 currentJobId = ""
             )
             else if state == "Failed" then
@@ -524,6 +609,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 NanoCoronaVfbPrototype.extractPassesButton.enabled = true
                 NanoCoronaVfbPrototype.cancelButton.enabled = false
                 busy = false
+                try (networkBridge.ForgetJob currentJobId) catch()
                 currentJobId = ""
             )
             else if state == "Canceled" then
@@ -536,6 +622,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 NanoCoronaVfbPrototype.extractPassesButton.enabled = true
                 NanoCoronaVfbPrototype.cancelButton.enabled = false
                 busy = false
+                try (networkBridge.ForgetJob currentJobId) catch()
                 currentJobId = ""
             )
         )
@@ -559,6 +646,15 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
             (
                 networkBridge.CancelGeneration currentJobId
                 NanoCoronaVfbPrototype.setStatus "Canceling AI generation..."
+            )
+            catch()
+        )
+        else if qaJobId != "" and networkBridge != undefined then
+        (
+            try
+            (
+                networkBridge.CancelGeneration qaJobId
+                NanoCoronaVfbPrototype.setStatus "Canceling Vision QA..."
             )
             catch()
         )
@@ -645,7 +741,13 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         if r.success then
         (
             sceneJsonPath = r.sceneJsonPath
-            resultPath = r.beautyPath
+            beautyPath = r.beautyPath
+            resultPath = ""
+            if qaJobId != "" and networkBridge != undefined do
+                try (networkBridge.ForgetJob qaJobId) catch()
+            qaJobId = ""
+            NanoCoronaVfbPrototype.qaButton.enabled = false
+            NanoCoronaVfbPrototype.correctionButton.enabled = false
             NanoCoronaVfbPrototype.sceneLabel.text = ("Scene.json: " + sceneJsonPath)
             NanoCoronaVfbPrototype.editLabel.text = "Edit.json: will be created on Generate"
             NanoCoronaVfbPrototype.packageLabel.text = "Beauty + Depth + Normals + Architecture Mask"
@@ -667,6 +769,8 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         if busy then return()
 
         busy = true
+        NanoCoronaVfbPrototype.qaButton.enabled = false
+        NanoCoronaVfbPrototype.correctionButton.enabled = false
         NanoCoronaVfbPrototype.generateButton.enabled = false
         NanoCoronaVfbPrototype.setupPassesButton.enabled = false
         NanoCoronaVfbPrototype.extractPassesButton.enabled = false
@@ -698,22 +802,41 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         )
     )
 
+    fn getSelectedSourcePath =
+    (
+        local packageDir = ""
+        if NanoCoronaVfbPrototype.sourceDrop.selection == 1 then return beautyPath
+        if sceneJsonPath == "" then return ""
+
+        packageDir = getFilenamePath sceneJsonPath
+        if NanoCoronaVfbPrototype.sourceDrop.selection == 2 then packageDir + "\\depth.png"
+        else if NanoCoronaVfbPrototype.sourceDrop.selection == 3 then packageDir + "\\normals.png"
+        else if NanoCoronaVfbPrototype.sourceDrop.selection == 4 then packageDir + "\\architecture_mask.png"
+        else ""
+    )
+
+    fn showSelectedSource =
+    (
+        local p = NanoCoronaVfbPrototype.getSelectedSourcePath()
+        local sourceName = "Source"
+        if NanoCoronaVfbPrototype.sourceDrop.selection > 0 do
+            sourceName = NanoCoronaVfbPrototype.sourceDrop.items[NanoCoronaVfbPrototype.sourceDrop.selection]
+        if p != "" and doesFileExist p then
+        (
+            compareMode = "Source"
+            NanoCoronaVfbPrototype.previewBeauty p
+            NanoCoronaVfbPrototype.setStatus ("Showing source: " + sourceName)
+            return true
+        )
+
+        messageBox ("Selected source is not available: " + sourceName + ". Extract passes first.") title:"NanoCorona"
+        false
+    )
+
     fn showSource =
     (
-        local p = ""
-        if sceneJsonPath != "" then
-        (
-            p = (getFilenamePath sceneJsonPath) + "\\beauty.png"
-            if doesFileExist p then
-            (
-                compareMode = "Source"
-                NanoCoronaVfbPrototype.previewBeauty p
-                NanoCoronaVfbPrototype.setStatus "Showing Corona source"
-                return true
-            )
-        )
-        messageBox "Corona source Beauty is not available. Extract passes first." title:"NanoCorona"
-        false
+        NanoCoronaVfbPrototype.sourceDrop.selection = 1
+        NanoCoronaVfbPrototype.showSelectedSource()
     )
 
     fn toggleAB =
@@ -745,7 +868,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
         )
         else
         (
-            messageBox "Extract the current VFB first." title:"NanoCorona"
+            messageBox "No AI result is available yet." title:"NanoCorona"
         )
     )
 
@@ -816,6 +939,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     on openVfbButton pressed do NanoCoronaVfbPrototype.openCoronaVfb()
     on settingsButton pressed do NanoCoronaVfbPrototype.openSettings()
     on modelDrop selected i do selectedModel = if i == 1 then "gemini-3.1-flash-image" else "gemini-3-pro-image"
+    on sourceDrop selected i do NanoCoronaVfbPrototype.showSelectedSource()
     on setupPassesButton pressed do NanoCoronaVfbPrototype.setupPasses()
     on extractPassesButton pressed do NanoCoronaVfbPrototype.extractPasses()
     on generateButton pressed do NanoCoronaVfbPrototype.generatePrototype()
@@ -848,7 +972,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
                 bmp.filename = p
                 save bmp quiet:true
                 close bmp
-                resultPath = p
+                beautyPath = p
                 NanoCoronaVfbPrototype.previewBeauty p
                 NanoCoronaVfbPrototype.setStatus "Beauty captured"
                 ok = true
@@ -883,10 +1007,7 @@ rollout NanoCoronaVfbPrototype "NanoCorona" width:340 height:760
     on NanoCoronaVfbPrototype close do
     (
         try (NanoCoronaVfbPrototype.jobTimer.active = false) catch()
-        if currentJobId != "" and networkBridge != undefined do
-        (
-            try (networkBridge.CancelGeneration currentJobId) catch()
-        )
+        try (NanoCoronaVfbPrototype.cancelNetworkGeneration()) catch()
     )
 )
 

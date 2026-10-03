@@ -5,12 +5,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 $project = Join-Path $RepoRoot "src\NanoNetwork\NanoNetwork.csproj"
+$releaseDir = Join-Path $RepoRoot "src\NanoNetwork\bin\Release\net8.0-windows"
+$dll = Join-Path $releaseDir "NanoNetwork.dll"
 if (!(Test-Path $project)) { throw "Invalid repository root: $RepoRoot" }
 
-$msbuild = Get-Command msbuild.exe -ErrorAction SilentlyContinue
-if (!$msbuild) { throw "msbuild.exe was not found. Install Visual Studio Build Tools or build NanoNetwork manually." }
+$dotnet = Get-Command dotnet.exe -ErrorAction SilentlyContinue
+if (!$dotnet) { throw "dotnet.exe was not found. Install the .NET 8 SDK first." }
 
-& $msbuild.Source $project /p:Configuration=Release /m
+& $dotnet.Source build $project -c Release
 if ($LASTEXITCODE -ne 0) { throw "Build failed." }
 
 if (!(Test-Path $dll)) { throw "Release DLL was not produced." }
@@ -18,7 +20,7 @@ if (!(Test-Path $dll)) { throw "Release DLL was not produced." }
 $stage = Join-Path $OutputDir "NanoCorona"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
-Copy-Item $dll $stage -Force
+Copy-Item (Join-Path $releaseDir "*") $stage -Recurse -Force
 Copy-Item (Join-Path $RepoRoot "src\MaxScript\NanoCorona_VFB_Prototype.ms") $stage -Force
 Copy-Item (Join-Path $RepoRoot "src\MaxScript\NanoCorona_RenderExtraction.ms") $stage -Force
 Copy-Item (Join-Path $RepoRoot "installer\Install-NanoCorona.ps1") $stage -Force

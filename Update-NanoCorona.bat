@@ -41,8 +41,7 @@ if not exist "%REPO_ROOT%\installer\Install-NanoCorona-OneClick.ps1" goto :error
 echo [2/4] Update source downloaded.
 
 echo [3/4] Building and installing...
-echo .NET 8 SDK version check is intentionally skipped.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%REPO_ROOT%\installer\Install-NanoCorona-OneClick.ps1" -RepoRoot "%REPO_ROOT%" -SkipDotNetInstall
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%REPO_ROOT%\installer\Install-NanoCorona-OneClick.ps1" -RepoRoot "%REPO_ROOT%"
 if errorlevel 1 goto :error
 
 echo.

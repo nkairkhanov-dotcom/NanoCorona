@@ -1,60 +1,29 @@
 # Corona VFB panel prototype
 
-This prototype implements the first UI milestone for NanoCorona:
+## Purpose
 
-    Corona VFB render surface  |  NanoCorona right panel
-                                 Source
-                                 Prompt
-                                 Strength
-                                 Architecture locked
-                                 GENERATE AI
-                                 Result preview
-                                 Show Result
+The NanoCorona panel is a dockable 3ds Max rollout designed to sit beside the Corona VFB. It uses the documented CUI docking mechanism and Corona MAXScript API; it does not inject controls into undocumented Corona VFB widgets.
 
-## What is real
+## Implemented workflow
 
-- The script calls the Corona MAXScript API to open the Corona VFB.
-- The NanoCorona UI is a native MAXScript rollout registered as a 3ds Max dockable CUI dialog bar.
-- The panel is intended to dock on the right side of the 3ds Max UI while Corona VFB remains the render surface.
-- Prompt, Strength, Resolution, Architecture locked, Generate, and Result are interactive.
-- Generate reads the current Corona Beauty framebuffer using CoronaRenderer.CoronaFp.getVfbContent 0 true false, saves a local prototype result, and displays it in the Result area.
-- Show Result opens the saved prototype result as a 3ds Max image window.
-- No browser, external upload, or network request is used.
+1. Select the architectural objects to protect.
+2. Run **Setup Depth / Normals / Architecture Mask** and render the frame again in Corona.
+3. Run **Extract Passes + Scene.json**.
+4. Select a preset, adjust the prompt, strength, model and resolution, then choose **Generate AI**.
+5. MAXScript starts an asynchronous `NanoNetworkBridge` job and polls it every 500 ms.
+6. The returned image is previewed in the panel without overwriting Corona's source VFB image.
+7. Run **Vision QA** and, if it reports a violation, optionally run **Correction Pass**.
 
-Chaos documents Corona VFB 2.0 as the default VFB starting with Corona 12 and documents that the VFB can be docked in the 3ds Max UI. The Corona MAXScript reference exposes showVfb and getVfbContent, which makes this prototype possible without relying on undocumented VFB widget internals.
+The panel can preview the extracted Beauty, Z-Depth, Normals and architecture mask via the Source selector. SOURCE, RESULT and A/B show the original Beauty and the separate AI result.
 
-## What is intentionally mocked
+## Threading and result behavior
 
-The current Generate operation is **not AI generation**. It is a transport/UI proof:
+MAXScript owns all scene and UI calls. The .NET bridge owns HTTP and file work in background tasks. The rollout timer is the only place that updates controls after a request begins.
 
-    Corona Beauty → prototype result → Result preview
+Input files, `Scene.json`, `Edit.json` and timestamped results are placed in `%TEMP%\NanoCorona\Current`. The source Beauty is retained separately from the result so that Vision QA and correction always use the original Corona render as their primary reference.
 
-This is deliberate. It lets us validate the right-panel workflow before introducing API latency, credentials, provider errors, render-pass extraction, or background threading.
+## Limits
 
-## Run
-
-1. Open 3ds Max with Corona installed.
-2. Set Corona as the active renderer.
-3. Open the MAXScript Editor.
-4. Evaluate:
-
-    src/MaxScript/NanoCorona_VFB_Prototype.ms
-
-5. Render a frame so the Corona VFB contains a Beauty image.
-6. The script opens Corona VFB and docks NanoCorona to the right.
-7. Enter a prompt, set Strength/Resolution, and press **GENERATE AI**.
-8. The prototype result is stored under the 3ds Max temp directory in:
-
-    NanoCorona\NanoCorona_Prototype_Result.png
-
-## Important layout note
-
-The production target is still **Corona-VFB-first**. This prototype uses the documented 3ds Max CUI docking mechanism for the NanoCorona panel rather than injecting custom widgets into Corona VFB's internal widget tree. That gives us a stable first implementation while we separately test whether direct embedding into the VFB can be supported across Corona versions.
-
-## Next milestone
-
-Replace the local snapshot inside generatePrototype() with:
-
-    Beauty → Depth → Normals → Architecture Mask → Scene.json → Edit.json → NanoNetwork.dll → provider → Result
-
-The UI contract should stay stable while the transport layer is replaced.
+- Generation and QA progress are phase-based.
+- The panel result preview is the supported result surface; direct insertion into Corona VFB history is not implemented.
+- Render-element channel behavior, Gemini generation quality and QA accuracy require live 3ds Max/Corona benchmark testing.

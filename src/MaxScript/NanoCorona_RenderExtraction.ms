@@ -402,6 +402,7 @@ struct NanoCoronaRenderExtraction
         local n
         local architectureLocked
         local zDepthRange
+        local zDepthRangeJson
         local cameraBlock
         local json
         local path
@@ -421,6 +422,7 @@ struct NanoCoronaRenderExtraction
         n = undefined
         architectureLocked = false
         zDepthRange = calculateCameraDepthRange cam
+        zDepthRangeJson = "null"
         cameraBlock = ""
         json = ""
         path = ""
@@ -436,6 +438,10 @@ struct NanoCoronaRenderExtraction
         )
 
         aspect = if height != 0 then (width as float / height) else 0.0
+        if zDepthRange != undefined do
+        (
+            zDepthRangeJson = "[" + jsonNumber zDepthRange[1] + "," + jsonNumber zDepthRange[2] + "]"
+        )
         maskElement = findElementByClass CMasking_Mask
 
         if maskElement != undefined do
@@ -498,7 +504,8 @@ struct NanoCoronaRenderExtraction
             "      \"beauty\": " + jsonString beautyPath + ",\n" +
             "      \"depth\": " + jsonString depthPath + ",\n" +
             "      \"normals\": " + jsonString normalsPath + ",\n" +
-            "      \"architectureMask\": " + jsonString maskPath + "\n" +
+            "      \"architectureMask\": " + jsonString maskPath + ",\n" +
+            "      \"zDepthRange\": " + zDepthRangeJson + "\n" +
             "    },\n" +
             "    \"architectureSelectionCount\": " + architectureObjects.count as string + ",\n" +
             "    \"objects\": [\n" +
@@ -557,7 +564,6 @@ struct NanoCoronaRenderExtraction
         local okDepth
         local okNormals
         local okMask
-        local zDepthRange
 
         result = NanoCoronaExtractionResult()
         baseDir = ""
@@ -575,7 +581,6 @@ struct NanoCoronaRenderExtraction
         okDepth = false
         okNormals = false
         okMask = false
-        zDepthRange = undefined
 
         if not isCoronaActive() then
         (
@@ -612,14 +617,6 @@ struct NanoCoronaRenderExtraction
 
         depthIndex = findElementIndexByClass CGeometry_ZDepth
         normalsIndex = findElementIndexByClass CGeometry_NormalsShading
-        try
-        (
-            zDepthRange = calculateCameraDepthRange (getCamera())
-        )
-        catch
-        (
-            zDepthRange = undefined
-        )
         maskIndex = findElementIndexByClass CMasking_Mask
 
         -- Corona VFB channel 0 is Beauty, 1 is Alpha, and extra render
