@@ -113,18 +113,83 @@ begin
   end;
 end;
 
+function GetCorona2026Root(): String;
+var
+  EnvPath: String;
+begin
+  Result := '';
+
+  // Chaos supports selecting a specific Corona build for a Max version
+  // through this multiloaders environment variable.
+  EnvPath := GetEnv('CORONA_3DSMAX_2026_LOAD_PATH');
+  if (EnvPath <> '') and FileExists(AddBackslash(EnvPath) + 'Corona_Release.dll') then
+    Result := RemoveBackslashUnlessRoot(EnvPath);
+
+  // Current standard Chaos installation path.
+  if (Result = '') then begin
+    Result := ExpandConstant('{autopf}\Chaos\Corona\Corona Renderer for 3ds Max\2026');
+    if not FileExists(AddBackslash(Result) + 'Corona_Release.dll') then
+      Result := '';
+  end;
+
+  // Legacy Corona installation path, retained as a fallback for older
+  // installations. It is still checked for compatibility, but version 15
+  // is required below.
+  if (Result = '') then begin
+    Result := ExpandConstant('{autopf}\Corona\Corona Renderer for 3ds Max\2026');
+    if not FileExists(AddBackslash(Result) + 'Corona_Release.dll') then
+      Result := '';
+  end;
+end;
+
+function GetCoronaMajorVersion(const CoronaDll: String): Integer;
+var
+  MS, LS: Cardinal;
+begin
+  Result := 0;
+  if GetVersionNumbers(CoronaDll, MS, LS) then
+    Result := MS shr 16;
+end;
+
 function InitializeSetup(): Boolean;
 var
   MaxExe: String;
+  CoronaRoot: String;
+  CoronaDll: String;
+  CoronaVersion: Integer;
 begin
   Result := True;
-  MaxExe := GetMax2026Exe();
 
+  MaxExe := GetMax2026Exe();
   if MaxExe = '' then begin
     MsgBox(
       'NanoCorona requires Autodesk 3ds Max 2026.' + #13#10 + #13#10 +
       '3ds Max 2026 was not found on this computer.' + #13#10 +
       'Please install 3ds Max 2026 and run this installer again.',
+      mbError, MB_OK);
+    Result := False;
+    exit;
+  end;
+
+  CoronaRoot := GetCorona2026Root();
+  if CoronaRoot = '' then begin
+    MsgBox(
+      'NanoCorona requires Corona 15 for 3ds Max 2026.' + #13#10 + #13#10 +
+      'Corona for 3ds Max 2026 was not found.' + #13#10 +
+      'Please install Corona 15 for 3ds Max 2026 and run this installer again.',
+      mbError, MB_OK);
+    Result := False;
+    exit;
+  end;
+
+  CoronaDll := AddBackslash(CoronaRoot) + 'Corona_Release.dll';
+  CoronaVersion := GetCoronaMajorVersion(CoronaDll);
+
+  if CoronaVersion < 15 then begin
+    MsgBox(
+      'NanoCorona requires Corona 15 for 3ds Max 2026.' + #13#10 + #13#10 +
+      'An older Corona version was detected (' + IntToStr(CoronaVersion) + ').' + #13#10 +
+      'Please update Corona to version 15 and run this installer again.',
       mbError, MB_OK);
     Result := False;
     exit;
