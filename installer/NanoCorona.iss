@@ -86,7 +86,8 @@ begin
     MsgBox(
       'NanoCorona installation verification failed.' + #13#10 + #13#10 +
       'The installer will stop because the plugin was not verified successfully.' + #13#10 +
-      'Please review the error above and run the installer again.',
+      'Please review the diagnostic log and run the installer again.' + #13#10 +
+      'Log: ' + ExpandConstant('{app}\\NanoCorona-install.log'),
       mbError, MB_OK);
     Result := False;
     exit;
