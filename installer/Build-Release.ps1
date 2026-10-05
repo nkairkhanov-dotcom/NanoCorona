@@ -158,7 +158,7 @@ if (Test-Path -LiteralPath $zip) {
 Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
 
 $iss = Join-Path $RepoRoot "installer\NanoCorona.iss"
-& $iscc.Source /DAppVersion="$Version" /DSourceDir="$stage" /DOutputDir="$OutputDir" $iss
+& $iscc.Source /DAppVersion="$Version" /DSourceDir="$stage" /DWizardImageFile="$stage\NanoCorona-Wizard.bmp" /DWizardSmallImageFile="$stage\NanoCorona-WizardSmall.bmp" /DOutputDir="$OutputDir" $iss
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup build failed."
 }
