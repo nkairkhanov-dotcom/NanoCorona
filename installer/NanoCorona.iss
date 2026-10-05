@@ -63,10 +63,10 @@ Source: "{#SourceDir}\\Uninstall-NanoCorona.ps1"; DestDir: "{app}"; Flags: ignor
 WelcomeLabel1=Welcome to NanoCorona {#AppVersion}
 WelcomeLabel2=AI-powered image editing for 3ds Max + Corona.\n\nThe installer will set up NanoCorona for your Windows user account. No administrator rights are required.\n\nBefore continuing, close 3ds Max 2026.
 FinishedHeadingLabel=NanoCorona is ready
-FinishedLabel=NanoCorona {#AppVersion} has been installed successfully.\n\nRestart 3ds Max 2026 to load NanoCorona.
+FinishedLabel=NanoCorona {#AppVersion} has been installed or repaired successfully.\n\nRestart 3ds Max 2026 to load NanoCorona.
 
 [Run]
-Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\\Install-NanoCorona.ps1"" -PackageRoot ""{app}"""; Flags: runhidden waituntilterminated; StatusMsg: "Installing NanoCorona into 3ds Max..."
+Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\\Install-NanoCorona.ps1"" -PackageRoot ""{app}"""; Flags: runhidden waituntilterminated; StatusMsg: "Installing or repairing NanoCorona in 3ds Max..."
 
 [UninstallRun]
 Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\\Uninstall-NanoCorona.ps1"""; Flags: runhidden waituntilterminated
