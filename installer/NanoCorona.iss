@@ -31,7 +31,6 @@ VersionInfoCompany={#AppPublisher}
 DefaultDirName={localappdata}\NanoCorona
 SetupIconFile={#SourceDir}\NanoCorona.ico
 UninstallDisplayIcon={app}\NanoCorona.ico
-DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir={#OutputDir}
 OutputBaseFilename=NanoCorona-Setup
