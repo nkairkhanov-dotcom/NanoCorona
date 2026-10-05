@@ -191,6 +191,33 @@ begin
     if not FileExists(AddBackslash(Result) + 'CoronaMax_Release-2026.dll') then
       Result := '';
   end;
+
+  // Some valid Corona installations do not expose the plugin DLL at the
+  // expected location to an Inno Setup process. Chaos does, however, register
+  // the installed product and version in the Windows uninstall registry.
+  // Accept a registered Corona 15 as a safe fallback; the actual NanoCorona
+  // runtime does not need to load Corona itself.
+  if (Result = '') then begin
+    if RegQueryStringValue(
+      HKLM,
+      'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Chaos Corona for 3ds Max',
+      'DisplayVersion',
+      EnvPath) then begin
+      if Pos('15.', EnvPath) = 1 then
+        Result := '{registry-corona15}';
+    end;
+  end;
+
+  if (Result = '') then begin
+    if RegQueryStringValue(
+      HKLM,
+      'SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Chaos Corona for 3ds Max',
+      'DisplayVersion',
+      EnvPath) then begin
+      if Pos('15.', EnvPath) = 1 then
+        Result := '{registry-corona15}';
+    end;
+  end;
 end;
 
 function GetCoronaMajorVersion(const CoronaDll: String): Integer;
