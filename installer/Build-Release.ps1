@@ -1,6 +1,7 @@
 param(
     [string]$RepoRoot = (Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)),
-    [string]$OutputDir = (Join-Path $RepoRoot "dist")
+    [string]$OutputDir = (Join-Path $RepoRoot "dist"),
+    [string]$Version = "0.1.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,6 +30,7 @@ Copy-Item (Join-Path $RepoRoot "src\MaxScript\NanoCorona_RenderExtraction.ms") $
 Copy-Item (Join-Path $RepoRoot "src\MaxScript\NanoCorona_Toolbar.ms") $stage -Force
 Copy-Item (Join-Path $RepoRoot "installer\Install-NanoCorona.ps1") $stage -Force
 Copy-Item (Join-Path $RepoRoot "installer\Install-NanoCorona.cmd") $stage -Force
+Copy-Item (Join-Path $RepoRoot "installer\Uninstall-NanoCorona.ps1") $stage -Force
 Copy-Item (Join-Path $RepoRoot "Update-NanoCorona.bat") $stage -Force
 Copy-Item (Join-Path $RepoRoot "docs\INSTALL.md") $stage -Force
 Copy-Item (Join-Path $RepoRoot "docs\USER_GUIDE.md") $stage -Force
@@ -37,4 +39,27 @@ Copy-Item (Join-Path $RepoRoot "docs\COMPATIBILITY.md") $stage -Force
 $zip = Join-Path $OutputDir "NanoCorona.zip"
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
-Write-Host "Release package: $zip" -ForegroundColor Green
+
+$iscc = Get-Command iscc.exe -ErrorAction SilentlyContinue
+if (!$iscc) {
+    $isccCandidates = @(
+        "$env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe",
+        "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+    )
+    foreach ($candidate in $isccCandidates) {
+        if (Test-Path $candidate) { $iscc = Get-Item $candidate; break }
+    }
+}
+if (!$iscc) {
+    throw "Inno Setup 6 (ISCC.exe) was not found. Install Inno Setup 6 to build NanoCorona-Setup.exe."
+}
+
+$iss = Join-Path $RepoRoot "installer\NanoCorona.iss"
+& $iscc.Source /DAppVersion="$Version" /DSourceDir="$stage" /DOutputDir="$OutputDir" $iss
+if ($LASTEXITCODE -ne 0) { throw "Inno Setup build failed." }
+
+$setup = Join-Path $OutputDir "NanoCorona-Setup.exe"
+if (!(Test-Path $setup)) { throw "NanoCorona-Setup.exe was not produced." }
+
+Write-Host "Release ZIP: $zip" -ForegroundColor Green
+Write-Host "Windows installer: $setup" -ForegroundColor Green
