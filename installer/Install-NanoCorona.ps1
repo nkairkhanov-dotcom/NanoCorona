@@ -21,12 +21,18 @@ if (!(Test-Path $maxScript) -or !(Test-Path $extractScript) -or !(Test-Path $too
     throw "Release package is incomplete: required MAXScript files are missing."
 }
 if (!(Test-Path $MaxUserDataRoot)) {
-    throw "3ds Max 2026 user-data folder was not found: $MaxUserDataRoot"
+    # 3ds Max may not have been launched by this Windows user yet.
+    # Autodesk documents this as the default local user-data location.
+    New-Item -ItemType Directory -Force -Path $MaxUserDataRoot | Out-Null
 }
 
 $languageDirs = Get-ChildItem $MaxUserDataRoot -Directory -ErrorAction Stop
 if (!$languageDirs) {
-    throw "No 3ds Max 2026 language folders were found under $MaxUserDataRoot"
+    # ENU is the standard English profile and 3ds Max will initialize it
+    # normally on first launch if the profile does not exist yet.
+    $languageDirs = @(
+        (New-Item -ItemType Directory -Force -Path (Join-Path $MaxUserDataRoot "ENU"))
+    )
 }
 
 Write-Host "NanoCorona one-click installation" -ForegroundColor Cyan
@@ -61,5 +67,51 @@ foreach ($lang in $languageDirs) {
     Write-Host "Installed: $scripts" -ForegroundColor Green
 }
 
+function Test-NanoCoronaInstallation {
+    param([string]$Root)
+
+    $errors = @()
+    $required = @(
+        "runtime\NanoNetwork.dll",
+        "NanoCorona_VFB_Prototype.ms",
+        "NanoCorona_RenderExtraction.ms",
+        "NanoCorona_Toolbar.ms"
+    )
+
+    foreach ($relative in $required) {
+        $path = Join-Path $Root $relative
+        if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
+            $errors += "Missing: $relative"
+        }
+    }
+
+    if ($errors.Count -gt 0) {
+        throw ("NanoCorona installation verification failed: " + ($errors -join " | "))
+    }
+
+    Write-Host "Installation verification: OK" -ForegroundColor Green
+}
+
+foreach ($lang in $languageDirs) {
+    $scripts = Join-Path $lang.FullName "scripts\NanoCorona"
+    $startup = Join-Path $lang.FullName "scripts\startup"
+    $loader = Join-Path $startup "NanoCorona_Startup.ms"
+
+    Test-NanoCoronaInstallation -Root $scripts
+
+    if (!(Test-Path -LiteralPath $loader -PathType Leaf)) {
+        throw "Installation verification failed: startup loader was not created for $($lang.Name)."
+    }
+
+    $loaderText = Get-Content -LiteralPath $loader -Raw
+    if ($loaderText -notmatch 'NanoCorona_VFB_Prototype\.ms' -or
+        $loaderText -notmatch 'NanoCorona_Toolbar\.ms') {
+        throw "Installation verification failed: startup loader is incomplete for $($lang.Name)."
+    }
+
+    Write-Host "Verified: $($lang.Name)" -ForegroundColor Green
+}
+
 Write-Host ""
-Write-Host "Installation complete. Restart 3ds Max 2026 before using NanoCorona." -ForegroundColor Green
+Write-Host "Installation verification: ALL CHECKS PASSED" -ForegroundColor Green
+Write-Host "Restart 3ds Max 2026 before using NanoCorona." -ForegroundColor Green

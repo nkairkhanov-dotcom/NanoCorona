@@ -1,45 +1,62 @@
 # NanoCorona: one-click installation
 
-## What the user needs
+## For a normal user
+
+The recommended installation is now a normal Windows installer:
+
+1. Download **NanoCorona-Setup.exe** from the GitHub Release.
+2. Close 3ds Max.
+3. Double-click **NanoCorona-Setup.exe**.
+4. Click **Install**.
+5. Start 3ds Max 2026 again.
+
+That's it. You do **not** need Git, Visual Studio, the .NET SDK, PowerShell commands, or the NanoCorona source repository.
+
+The installer is **per-user** and does not require administrator rights. It detects the 3ds Max 2026 user-data directory and installs the complete NanoCorona runtime and MAXScript files into every language profile it finds.
+
+It also creates the startup loader automatically, so NanoCorona appears after the next 3ds Max launch.
+
+## Requirements
 
 - Windows 10/11 x64;
-- Autodesk 3ds Max 2026 and Corona 15;
-- a NanoCorona release ZIP;
-- a Gemini API key for generation.
+- Autodesk 3ds Max 2026;
+- Corona 15;
+- internet access for Gemini generation;
+- a Gemini API key.
 
-The user does **not** need Git, the .NET SDK, Visual Studio, or the source repository.
-
-## Install
-
-1. Download and unpack `NanoCorona.zip` from the project release page.
-2. Close 3ds Max if it is running.
-3. Double-click `Install-NanoCorona.cmd`.
-4. Restart 3ds Max 2026.
-
-The installer copies the ready-built .NET runtime and both MAXScript modules into every discovered 3ds Max 2026 language directory under:
-
-```text
-%LOCALAPPDATA%\Autodesk\3dsMax\2026 - 64bit\<language>\scripts\NanoCorona
-```
-
-It also writes the startup loader into the matching `scripts\startup` directory. On the next launch it adds the native dockable **NanoCorona** command bar at the top of 3ds Max. Its **OPEN NANOCORONA** / **HIDE NANOCORONA** button opens or hides the right-docked NanoCorona panel. Existing plugin files are replaced; the encrypted Gemini API key is retained.
+The installer does not install Autodesk 3ds Max or Corona.
 
 ## Update
 
-Close 3ds Max and double-click `Update-NanoCorona.bat`. It downloads the latest release ZIP, installs it, and removes the temporary package. It does not clone GitHub, install software, or build C# code.
+The installed project keeps the existing **Update-NanoCorona.bat** workflow for convenience. It downloads the latest **NanoCorona-Setup.exe** and launches the normal installer, so updating uses exactly the same installation path as a fresh install.
 
-## Build a distributable package
+You can also simply download the newest setup file from GitHub Releases and run it over the existing installation.
 
-This is only for the developer/release maintainer. With the .NET 8 SDK installed, run:
+The installer does not remove the encrypted Gemini API key stored for the current Windows user.
+
+## Uninstall
+
+Use Windows **Installed apps / Apps & features → NanoCorona → Uninstall**.
+
+The uninstaller removes NanoCorona files from the 3ds Max 2026 user-data profiles and removes the NanoCorona startup loader. It does not remove 3ds Max, Corona, or unrelated user scripts.
+
+## Developer / release maintainer
+
+Developers still build the distributable package with:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\installer\Build-Release.ps1
+powershell -ExecutionPolicy Bypass -File .\installer\Build-Release.ps1 -Version 0.1.0
 ```
 
-The command produces `dist\NanoCorona.zip`. That ZIP contains a `runtime` directory with `NanoNetwork.dll` and all required managed dependencies, the MAXScript files, the one-click installer, and the updater.
+The build produces:
 
-To publish that ZIP for automatic updates, push a version tag such as `v0.1.0`. GitHub Actions builds the package and attaches `NanoCorona.zip` to the matching GitHub Release.
+- `dist\NanoCorona-Setup.exe` — the recommended end-user installer;
+- `dist\NanoCorona.zip` — portable/manual fallback package.
+
+The Windows installer is built with Inno Setup 6. The GitHub Actions release workflow installs the required installer compiler automatically.
 
 ## First use
 
-After starting 3ds Max, use the **OPEN NANOCORONA** button in the NanoCorona command bar with Corona 15 as the active renderer. Enter the Gemini API key in **Settings**; NanoCorona saves it for the current Windows user with Windows DPAPI.
+After starting 3ds Max 2026, make sure Corona is the active renderer. The NanoCorona command bar is loaded automatically; use **OPEN NANOCORONA** to open the dockable panel.
+
+On first generation, enter the Gemini API key in **Settings**. NanoCorona stores it encrypted for the current Windows user with Windows DPAPI.
