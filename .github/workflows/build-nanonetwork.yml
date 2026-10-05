@@ -32,9 +32,9 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Install Inno Setup 6
+      - name: Install installer build tools
         shell: powershell
-        run: choco install innosetup --no-progress -y
+        run: choco install innosetup imagemagick --no-progress -y
 
       - name: Resolve installer version
         shell: powershell
