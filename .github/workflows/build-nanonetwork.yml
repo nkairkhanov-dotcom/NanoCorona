@@ -85,7 +85,7 @@ jobs:
               "Uninstall-NanoCorona.ps1",
               "NanoCorona-MANIFEST.txt"
             )
-            $names = $archive.Entries.FullName
+            $names = $archive.Entries.FullName | ForEach-Object { $_ -replace '\\', '/' }
             foreach ($name in $required) { if ($name -notin $names) { throw "ZIP validation failed: missing $name" } }
           } finally { $archive.Dispose() }
 
