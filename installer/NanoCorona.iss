@@ -46,6 +46,7 @@ DisableProgramGroupPage=yes
 ShowLanguageDialog=no
 CloseApplications=no
 Uninstallable=yes
+UsePreviousAppDir=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
@@ -77,6 +78,20 @@ begin
   WizardForm.WelcomeLabel1.Font.Style := [fsBold];
   WizardForm.WelcomeLabel2.AutoSize := False;
   WizardForm.WelcomeLabel2.Height := ScaleY(150);
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+  if CurPageID = wpWelcome then begin
+    if DirExists(ExpandConstant('{localappdata}\\NanoCorona')) then begin
+      WizardForm.WelcomeLabel1.Caption := 'Repair or update NanoCorona {#AppVersion}';
+      WizardForm.WelcomeLabel2.Caption :=
+        'A previous NanoCorona installation was found.' + #13#10 + #13#10 +
+        'Click Next to repair or update the existing installation.' + #13#10 +
+        'Your Gemini API key is stored separately and will not be removed.';
+    end;
+  end;
 end;
 
 function GetMax2026Root(): String;
