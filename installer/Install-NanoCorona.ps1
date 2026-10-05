@@ -67,5 +67,51 @@ foreach ($lang in $languageDirs) {
     Write-Host "Installed: $scripts" -ForegroundColor Green
 }
 
+function Test-NanoCoronaInstallation {
+    param([string]$Root)
+
+    $errors = @()
+    $required = @(
+        "runtime\NanoNetwork.dll",
+        "NanoCorona_VFB_Prototype.ms",
+        "NanoCorona_RenderExtraction.ms",
+        "NanoCorona_Toolbar.ms"
+    )
+
+    foreach ($relative in $required) {
+        $path = Join-Path $Root $relative
+        if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
+            $errors += "Missing: $relative"
+        }
+    }
+
+    if ($errors.Count -gt 0) {
+        throw ("NanoCorona installation verification failed: " + ($errors -join " | "))
+    }
+
+    Write-Host "Installation verification: OK" -ForegroundColor Green
+}
+
+foreach ($lang in $languageDirs) {
+    $scripts = Join-Path $lang.FullName "scripts\NanoCorona"
+    $startup = Join-Path $lang.FullName "scripts\startup"
+    $loader = Join-Path $startup "NanoCorona_Startup.ms"
+
+    Test-NanoCoronaInstallation -Root $scripts
+
+    if (!(Test-Path -LiteralPath $loader -PathType Leaf)) {
+        throw "Installation verification failed: startup loader was not created for $($lang.Name)."
+    }
+
+    $loaderText = Get-Content -LiteralPath $loader -Raw
+    if ($loaderText -notmatch 'NanoCorona_VFB_Prototype\.ms' -or
+        $loaderText -notmatch 'NanoCorona_Toolbar\.ms') {
+        throw "Installation verification failed: startup loader is incomplete for $($lang.Name)."
+    }
+
+    Write-Host "Verified: $($lang.Name)" -ForegroundColor Green
+}
+
 Write-Host ""
-Write-Host "Installation complete. Restart 3ds Max 2026 before using NanoCorona." -ForegroundColor Green
+Write-Host "Installation verification: ALL CHECKS PASSED" -ForegroundColor Green
+Write-Host "Restart 3ds Max 2026 before using NanoCorona." -ForegroundColor Green
