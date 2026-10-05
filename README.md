@@ -1,74 +1,100 @@
 # NanoCorona
 
-AI-assisted architectural post-processing plugin for Autodesk 3ds Max + Corona Renderer.
+**AI image editing inside 3ds Max + Corona.**
 
-## Project idea
+NanoCorona sends a Corona render and technical passes to Nano Banana / Gemini and returns an AI-edited result without leaving 3ds Max.
 
-NanoCorona connects Corona renders and technical passes to an AI image generation/editing provider while keeping architectural structure under explicit constraints.
+## 👤 For users
+
+**Requirements**
+
+- Windows 10/11 x64
+- 3ds Max 2026
+- Corona 15
+- Gemini API key
+- Internet connection
+
+### Install
+
+1. Open **Releases**.
+2. Download **NanoCorona-Setup.exe**.
+3. Double-click it.
+4. Click **Install**.
+5. Restart 3ds Max 2026.
+
+That's it.
+
+You do **not** need:
+
+- Git
+- Visual Studio
+- .NET SDK
+- manual copying of MAXScript files
+- administrator rights
+
+### Update
+
+Download the newest **NanoCorona-Setup.exe** from Releases and run it again.
+
+The installer automatically repairs/updates the existing installation. Your Gemini API key is kept separately.
+
+### Uninstall
+
+Use **Windows Settings → Apps → Installed apps → NanoCorona → Uninstall**.
+
+## 📦 Downloads
+
+- **NanoCorona-Setup.exe** — recommended for normal users.
+- **NanoCorona.zip** — portable/manual package for developers and troubleshooting.
+
+urlOpen NanoCorona Releaseshttps://github.com/nkairkhanov-dotcom/NanoCorona/releases
+
+## 🧑‍💻 Development
+
+The project is currently targeting **3ds Max 2026 + Corona 15**.
 
 Core pipeline:
 
-    Corona → Beauty/Depth/Normals/Masks → Scene.json → Edit.json → AI → QA → Result
+    Corona
+       ↓
+    Beauty + Z-Depth + Normals + Architecture Mask
+       ↓
+    Scene.json
+       ↓
+    NanoNetwork (.NET 8)
+       ↓
+    Gemini / Nano Banana
+       ↓
+    AI result + QA
 
-## Documentation
+### Documentation
 
 - [Installation](docs/INSTALL.md)
 - [User Guide](docs/USER_GUIDE.md)
-- [Compatibility Matrix](docs/COMPATIBILITY.md)
-
-- [Technical Specification](docs/TECHNICAL_SPEC.md)
+- [Compatibility](docs/COMPATIBILITY.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Technical Specification](docs/TECHNICAL_SPEC.md)
 - [Development Plan](docs/DEVELOPMENT_PLAN.md)
-- [Research Protocol](docs/RESEARCH_PROTOCOL.md)
-- [UI Specification](docs/UI_SPEC.md)
-- [Corona VFB Panel Prototype](docs/PROTOTYPE_VFB_PANEL.md)
-- [Render Extraction](docs/RENDER_EXTRACTION.md)
-- [Network Transport](docs/NETWORK_TRANSPORT.md)
-- [Phase 3 Max Bridge](docs/PHASE3_MAX_BRIDGE.md)
-- [Scene JSON Schema](schemas/scene.schema.json)
-- [Edit JSON Schema](schemas/edit.schema.json)
 
-## Phase 6 product UI
+The repository remains the source of truth for technical specifications, schemas and implementation details.
 
-The UI is organized as a Corona-VFB-first dockable panel with model selection, API-key settings entry point, source/result/A-B controls, generation progress, Vision QA and correction workflow. Direct undocumented Corona VFB embedding is not a production dependency.
+## 🚀 Creating a release
 
-## Current prototype
+For the maintainer, releases are intentionally simple:
 
-The Corona-VFB-first prototype is now connected to the first structured input pipeline.
+1. Open **Actions**.
+2. Select **Build NanoCorona release**.
+3. Click **Run workflow**.
+4. Enter a version such as **1.0.0**.
+5. Click **Run workflow**.
 
-Files:
+GitHub builds and validates the installer, then creates the Release with:
 
-    src/MaxScript/NanoCorona_VFB_Prototype.ms
-    src/MaxScript/NanoCorona_RenderExtraction.ms
+- `NanoCorona-Setup.exe`
+- `NanoCorona.zip`
 
-Workflow:
-
-    Select architecture objects
-          ↓
-    Setup Passes
-          ↓
-    Corona render
-          ↓
-    Extract
-          ↓
-    Beauty + Z-Depth + Normals + Architecture Mask
-          ↓
-    Scene.json
-
-The extraction module creates/reuses Corona render elements, reads the current Corona VFB, saves the passes under the 3ds Max temp directory, and generates a provider-agnostic Scene.json.
-
-The Generate button now has a C# transport target behind the structured input package. NanoNetwork.dll builds a provider request from Scene.json + Beauty + Depth + Normals + Architecture Mask and sends it asynchronously through the Gemini adapter.
-
-## Development principle
-
-Keep the UI contract stable while the image pipeline is implemented behind it. Do not rely on undocumented Corona VFB widget internals for the production path.
-
-The repository is the source of truth for project decisions, specifications, schemas, research protocol and implementation history.
+No manual packaging is required.
 
 ## Current status
 
-UI prototype milestone — Corona VFB + dockable NanoCorona panel.
-
-Data milestone — Beauty + Z-Depth + Normals + Architecture Mask + Scene.json.
-
-The current product target is **3ds Max 2026 + Corona 15**. NanoNetwork is ported to **.NET 8**, the installer targets the 3ds Max 2026 LocalAppData user tree, and the CI build produces the .NET 8 runtime package. Live 3ds Max/Corona acceptance testing remains the final release gate.
+The installer and packaging pipeline are ready. Final production acceptance still requires live testing on a machine with **3ds Max 2026 + Corona 15**.
