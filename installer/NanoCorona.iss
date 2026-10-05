@@ -123,12 +123,13 @@ begin
   // through this multiloaders environment variable.
   EnvPath := GetEnv('CORONA_3DSMAX_2026_LOAD_PATH');
   if (EnvPath <> '') and FileExists(AddBackslash(EnvPath) + 'Corona_Release.dll') then
-    Result := RemoveBackslashUnlessRoot(EnvPath);
+    Result := EnvPath;
 
   // Current standard Chaos installation path.
   if (Result = '') then begin
     Result := ExpandConstant('{autopf}\Chaos\Corona\Corona Renderer for 3ds Max\2026');
-    if not FileExists(AddBackslash(Result) + 'Corona_Release.dll') then
+    if (not FileExists(AddBackslash(Result) + 'Corona_Release.dll')) or
+       (not FileExists(AddBackslash(Result) + 'CoronaMax_Release-2026.dll')) then
       Result := '';
   end;
 
@@ -185,7 +186,7 @@ begin
   CoronaDll := AddBackslash(CoronaRoot) + 'Corona_Release.dll';
   CoronaVersion := GetCoronaMajorVersion(CoronaDll);
 
-  if CoronaVersion < 15 then begin
+  if CoronaVersion <> 15 then begin
     MsgBox(
       'NanoCorona requires Corona 15 for 3ds Max 2026.' + #13#10 + #13#10 +
       'An older Corona version was detected (' + IntToStr(CoronaVersion) + ').' + #13#10 +
