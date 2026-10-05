@@ -36,9 +36,18 @@ jobs:
         shell: powershell
         run: choco install innosetup --no-progress -y
 
+      - name: Resolve installer version
+        shell: powershell
+        run: |
+          if ("${{ github.ref }}" -match "^refs/tags/v([0-9]+(?:\\.[0-9]+){0,3})$") {
+            "NANOCORONA_VERSION=$($Matches[1])" | Out-File -FilePath $env:GITHUB_ENV -Append
+          } else {
+            "NANOCORONA_VERSION=0.0.0" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
+
       - name: Build distributable packages
         shell: powershell
-        run: .\installer\Build-Release.ps1 -Version ${{ github.ref_name }}
+        run: .\installer\Build-Release.ps1 -Version $env:NANOCORONA_VERSION
 
       - name: Upload installer packages
         uses: actions/upload-artifact@v4
