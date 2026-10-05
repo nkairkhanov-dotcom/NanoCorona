@@ -13,7 +13,13 @@
 AppId={{7B6D2E40-8B9B-4E9D-9D9D-5D5D5B4A0A26}
 AppName={#AppName}
 AppVersion={#AppVersion}
+AppVerName={#AppName} {#AppVersion}
 AppPublisher={#AppPublisher}
+VersionInfoVersion={#AppVersion}
+VersionInfoProductVersion={#AppVersion}
+VersionInfoTextVersion={#AppVersion}
+VersionInfoProductName={#AppName}
+VersionInfoCompany={#AppPublisher}
 DefaultDirName={localappdata}\NanoCorona
 SetupIconFile={#SourceDir}\NanoCorona.ico
 UninstallDisplayIcon={app}\NanoCorona.ico
