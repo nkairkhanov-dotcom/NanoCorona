@@ -69,7 +69,7 @@ FinishedLabel=NanoCorona {#AppVersion} has been installed or repaired successful
 ; Installation is executed from CurStepChanged so a non-zero exit code
 ; from the post-install verification can abort the installer cleanly.
 
-
+[Code]
 function RunNanoCoronaInstallerScript(): Boolean;
 var
   ResultCode: Integer;
