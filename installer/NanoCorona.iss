@@ -84,12 +84,49 @@ begin
   Result := ExpandConstant('{localappdata}\\Autodesk\\3dsMax\\2026 - 64bit');
 end;
 
+function GetMax2026Exe(): String;
+var
+  EnvPath: String;
+  RegPath: String;
+begin
+  Result := '';
+
+  // Autodesk creates this environment variable for the installed 3ds Max.
+  EnvPath := GetEnv('ADSK_3DSMAX_x64_2026');
+  if (EnvPath <> '') and FileExists(AddBackslash(EnvPath) + '3dsmax.exe') then
+    Result := AddBackslash(EnvPath) + '3dsmax.exe';
+
+  // Standard Autodesk installation location.
+  if (Result = '') then begin
+    RegPath := ExpandConstant('{autopf}\\Autodesk\\3ds Max 2026\\3dsmax.exe');
+    if FileExists(RegPath) then
+      Result := RegPath;
+  end;
+
+  // Autodesk registry location. 28.0 is the internal major version for Max 2026.
+  if (Result = '') then begin
+    if RegQueryStringValue(HKLM, 'SOFTWARE\\Autodesk\\3dsMax\\28.0\\MAX-1:409', 'InstallDir', RegPath) then begin
+      RegPath := AddBackslash(RegPath) + '3dsmax.exe';
+      if FileExists(RegPath) then
+        Result := RegPath;
+    end;
+  end;
+end;
+
 function InitializeSetup(): Boolean;
+var
+  MaxExe: String;
 begin
   Result := True;
-  if not DirExists(GetMax2026Root()) then begin
-    MsgBox('NanoCorona requires Autodesk 3ds Max 2026.' + #13#10 + #13#10 +
-      'Install 3ds Max 2026 first, then run this installer again.', mbError, MB_OK);
+  MaxExe := GetMax2026Exe();
+
+  if MaxExe = '' then begin
+    MsgBox(
+      'NanoCorona requires Autodesk 3ds Max 2026.' + #13#10 + #13#10 +
+      '3ds Max 2026 was not found on this computer.' + #13#10 +
+      'Please install 3ds Max 2026 and run this installer again.',
+      mbError, MB_OK);
     Result := False;
+    exit;
   end;
 end;
