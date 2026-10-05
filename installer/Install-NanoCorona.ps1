@@ -6,6 +6,10 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+$logPath = Join-Path $PackageRoot "NanoCorona-install.log"
+Start-Transcript -Path $logPath -Force | Out-Null
+try {
+
 # A release package contains ready-to-copy files. No compiler, SDK, Git, or
 # network access is required on the target workstation.
 $runtimeDir = Join-Path $PackageRoot "runtime"
@@ -115,3 +119,13 @@ foreach ($lang in $languageDirs) {
 Write-Host ""
 Write-Host "Installation verification: ALL CHECKS PASSED" -ForegroundColor Green
 Write-Host "Restart 3ds Max 2026 before using NanoCorona." -ForegroundColor Green
+}
+catch {
+    Write-Host ""
+    Write-Host "NanoCorona installation error: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Log: $logPath" -ForegroundColor Yellow
+    exit 1
+}
+finally {
+    Stop-Transcript | Out-Null
+}
