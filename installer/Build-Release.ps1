@@ -54,6 +54,16 @@ if (!$iscc) {
     throw "Inno Setup 6 (ISCC.exe) was not found. Install Inno Setup 6 to build NanoCorona-Setup.exe."
 }
 
+# Convert the vector icon to Windows ICO for Inno Setup.
+$magick = Get-Command magick.exe -ErrorAction SilentlyContinue
+if (!$magick) {
+    throw "ImageMagick (magick.exe) was not found. Install ImageMagick to build the installer."
+}
+$iconSource = Join-Path $RepoRoot "installer\NanoCorona.svg"
+$iconOutput = Join-Path $RepoRoot "installer\NanoCorona.ico"
+& $magick.Source $iconSource -background none -define icon:auto-resize=256,128,64,48,32,16 $iconOutput
+if ($LASTEXITCODE -ne 0 -or !(Test-Path $iconOutput)) { throw "Icon conversion failed." }
+
 $iss = Join-Path $RepoRoot "installer\NanoCorona.iss"
 & $iscc.Source /DAppVersion="$Version" /DSourceDir="$stage" /DOutputDir="$OutputDir" $iss
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup build failed." }
