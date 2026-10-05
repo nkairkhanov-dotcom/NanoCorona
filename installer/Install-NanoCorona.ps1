@@ -21,12 +21,18 @@ if (!(Test-Path $maxScript) -or !(Test-Path $extractScript) -or !(Test-Path $too
     throw "Release package is incomplete: required MAXScript files are missing."
 }
 if (!(Test-Path $MaxUserDataRoot)) {
-    throw "3ds Max 2026 user-data folder was not found: $MaxUserDataRoot"
+    # 3ds Max may not have been launched by this Windows user yet.
+    # Autodesk documents this as the default local user-data location.
+    New-Item -ItemType Directory -Force -Path $MaxUserDataRoot | Out-Null
 }
 
 $languageDirs = Get-ChildItem $MaxUserDataRoot -Directory -ErrorAction Stop
 if (!$languageDirs) {
-    throw "No 3ds Max 2026 language folders were found under $MaxUserDataRoot"
+    # ENU is the standard English profile and 3ds Max will initialize it
+    # normally on first launch if the profile does not exist yet.
+    $languageDirs = @(
+        (New-Item -ItemType Directory -Force -Path (Join-Path $MaxUserDataRoot "ENU"))
+    )
 }
 
 Write-Host "NanoCorona one-click installation" -ForegroundColor Cyan
