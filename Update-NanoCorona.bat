@@ -4,33 +4,30 @@ setlocal EnableExtensions
 title NanoCorona Updater
 
 set "UPDATE_DIR=%TEMP%\NanoCorona-update"
-set "RELEASE_URL=https://github.com/nkairkhanov-dotcom/NanoCorona/releases/latest/download/NanoCorona.zip"
+set "SETUP_URL=https://github.com/nkairkhanov-dotcom/NanoCorona/releases/latest/download/NanoCorona-Setup.exe"
+set "SETUP_PATH=%UPDATE_DIR%\NanoCorona-Setup.exe"
 
 echo.
 echo ==============================================
 echo  NanoCorona Updater
-echo  Downloading ready-to-install release package
+echo  Downloading the latest Windows installer
 echo ==============================================
 echo.
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ErrorActionPreference = 'Stop'; " ^
   "$updateDir = '%UPDATE_DIR%'; " ^
-  "$zipPath = Join-Path $updateDir 'NanoCorona.zip'; " ^
+  "$setupPath = '%SETUP_PATH%'; " ^
   "if (Test-Path $updateDir) { Remove-Item -LiteralPath $updateDir -Recurse -Force }; " ^
   "New-Item -ItemType Directory -Path $updateDir | Out-Null; " ^
-  "Invoke-WebRequest -Uri '%RELEASE_URL%' -OutFile $zipPath; " ^
-  "Expand-Archive -LiteralPath $zipPath -DestinationPath $updateDir -Force; " ^
-  "$installer = Join-Path $updateDir 'Install-NanoCorona.ps1'; " ^
-  "if (!(Test-Path $installer)) { throw 'The downloaded release package is incomplete.' }; " ^
-  "& $installer -PackageRoot $updateDir; " ^
-  "Remove-Item -LiteralPath $updateDir -Recurse -Force"
+  "Invoke-WebRequest -Uri '%SETUP_URL%' -OutFile $setupPath; " ^
+  "if (!(Test-Path $setupPath)) { throw 'NanoCorona installer download failed.' }; " ^
+  "Start-Process -FilePath $setupPath -Wait"
 
 if errorlevel 1 goto :error
 
 echo.
-echo NanoCorona update complete. Restart 3ds Max 2026.
-pause
+echo NanoCorona update installer finished.
 exit /b 0
 
 :error
