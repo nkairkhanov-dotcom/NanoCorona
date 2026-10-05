@@ -39,7 +39,6 @@ SolidCompression=yes
 WizardStyle=modern
 WizardImageFile={#WizardImageFile}
 WizardSmallImageFile={#WizardSmallImageFile}
-WizardResizable=no
 DisableWelcomePage=no
 DisableDirPage=yes
 DisableProgramGroupPage=yes
@@ -105,7 +104,7 @@ begin
 end;
 
 [UninstallRun]
-Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\\Uninstall-NanoCorona.ps1"""; Flags: runhidden waituntilterminated
+Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\\Uninstall-NanoCorona.ps1"""; Flags: runhidden waituntilterminated; RunOnceId: NanoCoronaCleanup
 
 [Code]
 procedure InitializeWizard;
