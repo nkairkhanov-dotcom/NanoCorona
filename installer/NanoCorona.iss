@@ -122,7 +122,9 @@ begin
   // Chaos supports selecting a specific Corona build for a Max version
   // through this multiloaders environment variable.
   EnvPath := GetEnv('CORONA_3DSMAX_2026_LOAD_PATH');
-  if (EnvPath <> '') and FileExists(AddBackslash(EnvPath) + 'Corona_Release.dll') then
+  if (EnvPath <> '') and
+     FileExists(AddBackslash(EnvPath) + 'Corona_Release.dll') and
+     FileExists(AddBackslash(EnvPath) + 'CoronaMax_Release-2026.dll') then
     Result := EnvPath;
 
   // Current standard Chaos installation path.
@@ -138,7 +140,8 @@ begin
   // is required below.
   if (Result = '') then begin
     Result := ExpandConstant('{autopf}\Corona\Corona Renderer for 3ds Max\2026');
-    if not FileExists(AddBackslash(Result) + 'Corona_Release.dll') then
+    if (not FileExists(AddBackslash(Result) + 'Corona_Release.dll')) or
+       (not FileExists(AddBackslash(Result) + 'CoronaMax_Release-2026.dll')) then
       Result := '';
   end;
 end;
