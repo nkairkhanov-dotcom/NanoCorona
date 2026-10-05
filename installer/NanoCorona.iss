@@ -15,6 +15,8 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 DefaultDirName={localappdata}\NanoCorona
+SetupIconFile={#SourceDir}\NanoCorona.ico
+UninstallDisplayIcon={app}\NanoCorona.ico
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir={#OutputDir}
@@ -27,6 +29,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
 [Files]
+Source: "{#SourceDir}\NanoCorona.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\\runtime\\*"; DestDir: "{app}\\runtime"; Flags: recursesubdirs ignoreversion
 Source: "{#SourceDir}\\NanoCorona_VFB_Prototype.ms"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\\NanoCorona_RenderExtraction.ms"; DestDir: "{app}"; Flags: ignoreversion
