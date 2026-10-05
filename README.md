@@ -47,7 +47,7 @@ Use **Windows Settings → Apps → Installed apps → NanoCorona → Uninstall*
 - **NanoCorona-Setup.exe** — recommended for normal users.
 - **NanoCorona.zip** — portable/manual package for developers and troubleshooting.
 
-urlOpen NanoCorona Releaseshttps://github.com/nkairkhanov-dotcom/NanoCorona/releases
+[Open NanoCorona Releases](https://github.com/nkairkhanov-dotcom/NanoCorona/releases)
 
 ## 🧑‍💻 Development
 
