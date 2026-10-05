@@ -49,6 +49,46 @@ jobs:
         shell: powershell
         run: .\installer\Build-Release.ps1 -Version $env:NANOCORONA_VERSION
 
+      - name: Validate PowerShell installer scripts
+        shell: powershell
+        run: |
+          $scripts = @(
+            ".\\installer\\Build-Release.ps1",
+            ".\\installer\\Install-NanoCorona.ps1",
+            ".\\installer\\Uninstall-NanoCorona.ps1"
+          )
+          foreach ($script in $scripts) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $script), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              throw "PowerShell syntax validation failed: $script"
+            }
+          }
+
+      - name: Validate distributable contents
+        shell: powershell
+        run: |
+          $setup = ".\\dist\\NanoCorona-Setup.exe"
+          $zip = ".\\dist\\NanoCorona.zip"
+          if (!(Test-Path $setup) -or (Get-Item $setup).Length -lt 100KB) { throw "Installer EXE is missing or unexpectedly small." }
+          if (!(Test-Path $zip) -or (Get-Item $zip).Length -lt 10KB) { throw "Portable ZIP is missing or unexpectedly small." }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip))
+          try {
+            $required = @(
+              "runtime/NanoNetwork.dll",
+              "NanoCorona_VFB_Prototype.ms",
+              "NanoCorona_RenderExtraction.ms",
+              "NanoCorona_Toolbar.ms",
+              "Install-NanoCorona.ps1",
+              "Uninstall-NanoCorona.ps1",
+              "NanoCorona-MANIFEST.txt"
+            )
+            $names = $archive.Entries.FullName
+            foreach ($name in $required) { if ($name -notin $names) { throw "ZIP validation failed: missing $name" } }
+          } finally { $archive.Dispose() }
+
       - name: Upload installer packages
         uses: actions/upload-artifact@v4
         with:
