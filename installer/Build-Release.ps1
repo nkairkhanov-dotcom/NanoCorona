@@ -64,6 +64,8 @@ $iconOutput = Join-Path $RepoRoot "installer\NanoCorona.ico"
 & $magick.Source $iconSource -background none -define icon:auto-resize=256,128,64,48,32,16 $iconOutput
 if ($LASTEXITCODE -ne 0 -or !(Test-Path $iconOutput)) { throw "Icon conversion failed." }
 
+Copy-Item $iconOutput (Join-Path $stage "NanoCorona.ico") -Force
+
 $iss = Join-Path $RepoRoot "installer\NanoCorona.iss"
 & $iscc.Source /DAppVersion="$Version" /DSourceDir="$stage" /DOutputDir="$OutputDir" $iss
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup build failed." }
