@@ -200,21 +200,31 @@ var
 begin
   Result := 0;
 
-  if (CoronaDll <> '') and GetVersionNumbers(CoronaDll, MS, LS) then
-    Result := MS shr 16;
+  // The Chaos uninstaller records the product version reliably.
+  if RegQueryStringValue(
+    HKLM,
+    'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Chaos Corona for 3ds Max',
+    'DisplayVersion',
+    DisplayVersion) then begin
+    if Pos('15.', DisplayVersion) = 1 then
+      Result := 15;
+  end;
 
   if Result = 0 then begin
-    if RegQueryStringValue(HKLM, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Chaos Corona for 3ds Max', 'DisplayVersion', DisplayVersion) then begin
+    if RegQueryStringValue(
+      HKLM,
+      'SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Chaos Corona for 3ds Max',
+      'DisplayVersion',
+      DisplayVersion) then begin
       if Pos('15.', DisplayVersion) = 1 then
         Result := 15;
     end;
   end;
 
+  // Fall back to the DLL version if the uninstall entry is unavailable.
   if Result = 0 then begin
-    if RegQueryStringValue(HKLM, 'SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Chaos Corona for 3ds Max', 'DisplayVersion', DisplayVersion) then begin
-      if Pos('15.', DisplayVersion) = 1 then
-        Result := 15;
-    end;
+    if (CoronaDll <> '') and GetVersionNumbers(CoronaDll, MS, LS) then
+      Result := MS shr 16;
   end;
 end;
 
