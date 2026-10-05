@@ -6,6 +6,14 @@
 #define SourceDir "dist\\NanoCorona"
 #endif
 
+#ifndef WizardImageFile
+#define WizardImageFile "{#SourceDir}\\NanoCorona-Wizard.bmp"
+#endif
+
+#ifndef WizardSmallImageFile
+#define WizardSmallImageFile "{#SourceDir}\\NanoCorona-WizardSmall.bmp"
+#endif
+
 #define AppName "NanoCorona"
 #define AppPublisher "NanoCorona"
 
@@ -30,6 +38,14 @@ OutputBaseFilename=NanoCorona-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+WizardImageFile={#WizardImageFile}
+WizardSmallImageFile={#WizardSmallImageFile}
+WizardResizable=no
+DisableWelcomePage=no
+DisableDirPage=yes
+DisableProgramGroupPage=yes
+ShowLanguageDialog=no
+CloseApplications=no
 Uninstallable=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -43,6 +59,12 @@ Source: "{#SourceDir}\\NanoCorona_Toolbar.ms"; DestDir: "{app}"; Flags: ignoreve
 Source: "{#SourceDir}\\Install-NanoCorona.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\\Uninstall-NanoCorona.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
+[Messages]
+WelcomeLabel1=Welcome to NanoCorona {#AppVersion}
+WelcomeLabel2=AI-powered image editing for 3ds Max + Corona.\n\nThe installer will set up NanoCorona for your Windows user account. No administrator rights are required.\n\nBefore continuing, close 3ds Max 2026.
+FinishedHeadingLabel=NanoCorona is ready
+FinishedLabel=NanoCorona {#AppVersion} has been installed successfully.\n\nRestart 3ds Max 2026 to load NanoCorona.
+
 [Run]
 Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\\Install-NanoCorona.ps1"" -PackageRoot ""{app}"""; Flags: runhidden waituntilterminated; StatusMsg: "Installing NanoCorona into 3ds Max..."
 
@@ -50,6 +72,14 @@ Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProf
 Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\\Uninstall-NanoCorona.ps1"""; Flags: runhidden waituntilterminated
 
 [Code]
+procedure InitializeWizard;
+begin
+  WizardForm.Caption := 'NanoCorona {#AppVersion} Setup';
+  WizardForm.WelcomeLabel1.Font.Style := [fsBold];
+  WizardForm.WelcomeLabel2.AutoSize := False;
+  WizardForm.WelcomeLabel2.Height := ScaleY(150);
+end;
+
 function GetMax2026Root(): String;
 begin
   Result := ExpandConstant('{localappdata}\\Autodesk\\3dsMax\\2026 - 64bit');
