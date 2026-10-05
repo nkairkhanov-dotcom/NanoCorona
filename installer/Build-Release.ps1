@@ -46,10 +46,6 @@ Copy-Item (Join-Path $RepoRoot "docs\INSTALL.md") $stage -Force
 Copy-Item (Join-Path $RepoRoot "docs\USER_GUIDE.md") $stage -Force
 Copy-Item (Join-Path $RepoRoot "docs\COMPATIBILITY.md") $stage -Force
 
-$zip = Join-Path $OutputDir "NanoCorona.zip"
-if (Test-Path $zip) { Remove-Item $zip -Force }
-Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
-
 $iscc = Get-Command iscc.exe -ErrorAction SilentlyContinue
 if (!$iscc) {
     $isccCandidates = @(
@@ -75,6 +71,22 @@ $iconOutput = Join-Path $RepoRoot "installer\NanoCorona.ico"
 if ($LASTEXITCODE -ne 0 -or !(Test-Path $iconOutput)) { throw "Icon conversion failed." }
 
 Copy-Item $iconOutput (Join-Path $stage "NanoCorona.ico") -Force
+
+# Create branded bitmap panels used by the modern Inno Setup wizard.
+# Inno Setup expects BMP files for WizardImageFile/WizardSmallImageFile.
+$wizardImage = Join-Path $RepoRoot "installer\NanoCorona-Wizard.bmp"
+$wizardSmallImage = Join-Path $RepoRoot "installer\NanoCorona-WizardSmall.bmp"
+& $magick.Source $iconSource -background "#0b0f14" -gravity center -resize "140x140" -extent 164x314 -colorspace sRGB -type TrueColor $wizardImage
+if ($LASTEXITCODE -ne 0 -or !(Test-Path $wizardImage)) { throw "Wizard image generation failed." }
+& $magick.Source $iconSource -background "#0b0f14" -gravity center -resize "48x48" -extent 55x55 -colorspace sRGB -type TrueColor $wizardSmallImage
+if ($LASTEXITCODE -ne 0 -or !(Test-Path $wizardSmallImage)) { throw "Wizard small image generation failed." }
+
+Copy-Item $wizardImage (Join-Path $stage "NanoCorona-Wizard.bmp") -Force
+Copy-Item $wizardSmallImage (Join-Path $stage "NanoCorona-WizardSmall.bmp") -Force
+
+$zip = Join-Path $OutputDir "NanoCorona.zip"
+if (Test-Path $zip) { Remove-Item $zip -Force }
+Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
 
 $iss = Join-Path $RepoRoot "installer\NanoCorona.iss"
 & $iscc.Source /DAppVersion="$Version" /DSourceDir="$stage" /DOutputDir="$OutputDir" $iss
