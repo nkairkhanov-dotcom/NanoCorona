@@ -39,7 +39,7 @@ jobs:
       - name: Resolve installer version
         shell: powershell
         run: |
-          if ("${{ github.ref }}" -match "^refs/tags/v([0-9]+(?:\\.[0-9]+){0,3})$") {
+          if ("${{ github.ref }}" -match "^refs/tags/v([0-9]+(?:\.[0-9]+){0,3})$") {
             "NANOCORONA_VERSION=$($Matches[1])" | Out-File -FilePath $env:GITHUB_ENV -Append
           } else {
             "NANOCORONA_VERSION=0.0.0" | Out-File -FilePath $env:GITHUB_ENV -Append
