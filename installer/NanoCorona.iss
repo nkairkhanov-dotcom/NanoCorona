@@ -58,6 +58,7 @@ Source: "{#SourceDir}\\NanoCorona_RenderExtraction.ms"; DestDir: "{app}"; Flags:
 Source: "{#SourceDir}\\NanoCorona_Toolbar.ms"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\\Install-NanoCorona.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\\Uninstall-NanoCorona.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\\NanoCorona-MANIFEST.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Messages]
 WelcomeLabel1=Welcome to NanoCorona {#AppVersion}
@@ -65,8 +66,43 @@ WelcomeLabel2=AI-powered image editing for 3ds Max + Corona.\n\nThe installer wi
 FinishedHeadingLabel=NanoCorona is ready
 FinishedLabel=NanoCorona {#AppVersion} has been installed or repaired successfully.\n\nRestart 3ds Max 2026 to load NanoCorona.
 
-[Run]
-Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\\Install-NanoCorona.ps1"" -PackageRoot ""{app}"""; Flags: runhidden waituntilterminated; StatusMsg: "Installing or repairing NanoCorona in 3ds Max..."
+; Installation is executed from CurStepChanged so a non-zero exit code
+; from the post-install verification can abort the installer cleanly.
+
+
+function RunNanoCoronaInstallerScript(): Boolean;
+var
+  ResultCode: Integer;
+  Params: String;
+begin
+  Params := '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\\Install-NanoCorona.ps1') + '" -PackageRoot "' + ExpandConstant('{app}') + '"';
+  Result := Exec(ExpandConstant('{sys}\\WindowsPowerShell\\v1.0\\powershell.exe'), Params, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  if not Result then begin
+    MsgBox('NanoCorona could not start its installation verification script.', mbError, MB_OK);
+    Result := False;
+    exit;
+  end;
+
+  if ResultCode <> 0 then begin
+    MsgBox(
+      'NanoCorona installation verification failed.' + #13#10 + #13#10 +
+      'The installer will stop because the plugin was not verified successfully.' + #13#10 +
+      'Please review the error above and run the installer again.',
+      mbError, MB_OK);
+    Result := False;
+    exit;
+  end;
+
+  Result := True;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then begin
+    if not RunNanoCoronaInstallerScript() then
+      Abort;
+  end;
+end;
 
 [UninstallRun]
 Filename: "{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\\Uninstall-NanoCorona.ps1"""; Flags: runhidden waituntilterminated
