@@ -76,7 +76,7 @@ function Test-NanoCoronaInstallation {
 
     $errors = @()
     $required = @(
-        "runtime\NanoNetwork.dll",
+        "NanoNetwork.dll",
         "NanoCorona_VFB_Prototype.ms",
         "NanoCorona_RenderExtraction.ms",
         "NanoCorona_Toolbar.ms"
