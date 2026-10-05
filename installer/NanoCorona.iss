@@ -173,15 +173,13 @@ begin
   // through this multiloaders environment variable.
   EnvPath := GetEnv('CORONA_3DSMAX_2026_LOAD_PATH');
   if (EnvPath <> '') and
-     FileExists(AddBackslash(EnvPath) + 'Corona_Release.dll') and
      FileExists(AddBackslash(EnvPath) + 'CoronaMax_Release-2026.dll') then
     Result := EnvPath;
 
   // Current standard Chaos installation path.
   if (Result = '') then begin
     Result := ExpandConstant('{autopf}\Chaos\Corona\Corona Renderer for 3ds Max\2026');
-    if (not FileExists(AddBackslash(Result) + 'Corona_Release.dll')) or
-       (not FileExists(AddBackslash(Result) + 'CoronaMax_Release-2026.dll')) then
+    if not FileExists(AddBackslash(Result) + 'CoronaMax_Release-2026.dll') then
       Result := '';
   end;
 
@@ -190,8 +188,7 @@ begin
   // is required below.
   if (Result = '') then begin
     Result := ExpandConstant('{autopf}\Corona\Corona Renderer for 3ds Max\2026');
-    if (not FileExists(AddBackslash(Result) + 'Corona_Release.dll')) or
-       (not FileExists(AddBackslash(Result) + 'CoronaMax_Release-2026.dll')) then
+    if not FileExists(AddBackslash(Result) + 'CoronaMax_Release-2026.dll') then
       Result := '';
   end;
 end;
@@ -199,10 +196,26 @@ end;
 function GetCoronaMajorVersion(const CoronaDll: String): Integer;
 var
   MS, LS: Cardinal;
+  DisplayVersion: String;
 begin
   Result := 0;
-  if GetVersionNumbers(CoronaDll, MS, LS) then
+
+  if (CoronaDll <> '') and GetVersionNumbers(CoronaDll, MS, LS) then
     Result := MS shr 16;
+
+  if Result = 0 then begin
+    if RegQueryStringValue(HKLM, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Chaos Corona for 3ds Max', 'DisplayVersion', DisplayVersion) then begin
+      if Pos('15.', DisplayVersion) = 1 then
+        Result := 15;
+    end;
+  end;
+
+  if Result = 0 then begin
+    if RegQueryStringValue(HKLM, 'SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Chaos Corona for 3ds Max', 'DisplayVersion', DisplayVersion) then begin
+      if Pos('15.', DisplayVersion) = 1 then
+        Result := 15;
+    end;
+  end;
 end;
 
 function InitializeSetup(): Boolean;
